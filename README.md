@@ -38,7 +38,7 @@ This infrastructure will be composed by :
  10. Rename `vars.yml-template` to `vars.yml`
  11. Fill every field in `vars.yml` with everything we just generated
  
- ## Install
+## Install
  
  1. Create all elements of your cloud project : `ansible-playbook -i ansible_hosts --ask-sudo-pass main.yml`
  2. Create your VMs and install all the tools : `ansible-playbook -i ansible_hosts --ask-sudo-pass deploy.yml`
