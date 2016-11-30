@@ -1,0 +1,59 @@
+---
+  - name: Install ufw
+    apt: name=ufw state=present
+ 
+  - name: create a new user
+    user: name={{ newuser }}
+          state=present
+          shell=/bin/bash
+
+  - authorized_key: user="{{ newuser }}"
+                    key="{{ item }}"
+    with_file:
+      - public_keys/benoit-xps
+      - public_keys/benoit-desktop
+      - public_keys/benoit-server
+      - public_keys/d2si
+      - public_keys/jfouqueray
+ 
+  - name: Make sure we can sudo
+    template: src=newuser_sudoer dest=/etc/sudoers.d/{{ newuser }}_sudoer mode=0440
+ 
+  - name: Configure ufw
+    ufw: rule=allow port=ssh proto=tcp
+
+  - name: Default deny
+    ufw: state=enabled direction=incoming policy=allow
+ 
+  - name: Install SSMTP
+    apt: name=ssmtp state=present
+
+  - name: Setup SSMTP conf file
+    template: src=ssmtp.conf.j2 dest=/etc/ssmtp/ssmtp.conf mode=0440
+
+  - name: Install NTP
+    apt: package=ntp state=present update_cache=yes
+    tags: ntp
+
+  - name: Copy over the NTP configuration
+    template: src=ntp.conf.j2 dest=/etc/ntp.conf
+    notify:
+      - Restart NTP
+    tags: ntp
+
+  - name: Make sure NTP is started up
+    service: name=ntp state=started enabled=yes
+    tags: ntp
+  - name: Set EDITOR variable to vim
+    copy: src=profile-editor.sh dest=/etc/profile.d/editor.sh owner=root group=root mode=644 
+
+  - name: Set MAILTO for crontab
+    template: src=crontab.j2 dest=/etc/crontab mode=0640
+
+  - name: Install Python psycopg2 module
+    apt: name=python-psycopg2 state=present
+  
+  - name: install docker-py 
+    pip: name=docker-py state=present 
+  
+

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<com.smartcodeltd.jenkinsci.plugins.buildmonitor.BuildMonitorView plugin="build-monitor-plugin@1.9+build.201605021413">
+  <name>JavaDemoApp</name>
+  <filterExecutors>false</filterExecutors>
+  <filterQueue>false</filterQueue>
+  <properties class="hudson.model.View$PropertyList"/>
+  <jobNames>
+    <comparator class="hudson.util.CaseInsensitiveComparator"/>
+    <string>JavaDemoApp</string>
+    <string>JavaDemoApp/develop</string>
+    <string>JavaDemoApp/master</string>
+  </jobNames>
+  <jobFilters/>
+  <columns/>
+  <recurse>true</recurse>
+  <title>JavaDemoApp</title>
+  <config>
+    <order class="com.smartcodeltd.jenkinsci.plugins.buildmonitor.order.ByName"/>
+  </config>
+</com.smartcodeltd.jenkinsci.plugins.buildmonitor.BuildMonitorView>

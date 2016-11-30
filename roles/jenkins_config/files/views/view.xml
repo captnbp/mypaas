@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<se.diabol.jenkins.pipeline.DeliveryPipelineView plugin="delivery-pipeline-plugin@0.9.8">
+  <name>demo-pipeline</name>
+  <filterExecutors>false</filterExecutors>
+  <filterQueue>false</filterQueue>
+  <properties class="hudson.model.View$PropertyList"/>
+  <componentSpecs>
+    <se.diabol.jenkins.pipeline.DeliveryPipelineView_-ComponentSpec>
+      <name>demo-pipeline</name>
+      <firstJob>develop-continuous-build</firstJob>
+      <lastJob/>
+    </se.diabol.jenkins.pipeline.DeliveryPipelineView_-ComponentSpec>
+  </componentSpecs>
+  <noOfPipelines>3</noOfPipelines>
+  <showAggregatedPipeline>false</showAggregatedPipeline>
+  <noOfColumns>1</noOfColumns>
+  <sorting>none</sorting>
+  <showAvatars>false</showAvatars>
+  <updateInterval>2</updateInterval>
+  <showChanges>false</showChanges>
+  <allowManualTriggers>false</allowManualTriggers>
+  <showTotalBuildTime>false</showTotalBuildTime>
+  <allowRebuild>false</allowRebuild>
+  <allowPipelineStart>false</allowPipelineStart>
+  <showDescription>false</showDescription>
+  <showPromotions>false</showPromotions>
+  <showTestResults>false</showTestResults>
+  <showStaticAnalysisResults>false</showStaticAnalysisResults>
+  <regexpFirstJobs/>
+</se.diabol.jenkins.pipeline.DeliveryPipelineView>

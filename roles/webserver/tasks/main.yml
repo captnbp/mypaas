@@ -1,0 +1,68 @@
+---
+#- name: Add Nginx Repository
+#  apt_repository: repo='ppa:nginx/stable' state=present
+#  register: ppastable
+- name: Install Nginx
+  apt: pkg=nginx state=installed update_cache=true
+#  when: ppastable|success
+  register: nginxinstalled
+- name: Stop Nginx
+  service: name=nginx state=stopped
+- name: Disable Nginx
+  service: name=nginx enabled=no
+
+- name: Setup logrotate
+  template: src=logrotate.j2 dest=/etc/logrotate.d/nginx owner=root group=root mode=0644
+
+- name: Docker Nginx
+  docker:
+    name: nginx
+    image: nginx
+    restart_policy: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/etc/nginx:/etc/nginx"
+      - "/etc/letsencrypt/:/etc/letsencrypt/"
+      - "/etc/ssl/private/:/etc/ssl/private/"
+      - "/data/nginx/log:/var/log/nginx"
+    net: "{{ env }}-net"
+
+- name: Configure ufw http
+  ufw: rule=allow port=http proto=tcp
+
+- name: Configure ufw https
+  ufw: rule=allow port=https proto=tcp
+
+- name: Add SSL conf
+  copy: src=ssl.conf dest=/etc/nginx/conf.d/ owner=root group=root mode=0644
+- name: Add Security conf
+  copy: src=security.conf dest=/etc/nginx/conf.d/ owner=root group=root mode=0644
+
+- name: Remove default Nginx site
+  action: file path=/etc/nginx/sites-enabled/default state=absent
+
+- name: Add global SSL DH param key
+  command: openssl dhparam -out /etc/ssl/private/{{ tld_hostname }}.dhparam.crt -5 2048
+  args:
+    creates: /etc/ssl/private/{{ tld_hostname }}.dhparam.crt
+
+- name: Add Nginx conf file
+  template: src=nginx.conf.j2 dest=/etc/nginx/nginx.conf mode=0440
+
+- name: Add Nginx status conf file
+  template: src=status.conf.j2 dest=/etc/nginx/sites-enabled/status.conf mode=0440
+  notify:
+   - Reload Nginx
+
+- name: Add Nginx default conf file
+  template: src=default.conf.j2 dest=/etc/nginx/sites-enabled/default.conf mode=0440
+  notify:
+   - Reload Nginx
+
+- name: Setup default Datadog config file for Nginx
+  template: src=nginx.yaml.j2 dest=/etc/dd-agent/conf.d/nginx.yaml mode=0640 owner=dd-agent
+  when: monitoring
+  notify: Restart Datadog agent
+

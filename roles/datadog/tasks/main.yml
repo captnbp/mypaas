@@ -1,0 +1,26 @@
+---
+- apt: name=apt-transport-https state=latest
+
+- apt_key: id=C7A7DA52 keyserver=hkp://keyserver.ubuntu.com:80 state=present
+
+- apt_repository: repo='deb http://apt.datadoghq.com/ stable main' state=present update_cache=yes
+
+- apt: name=datadog-agent state=latest
+
+- name: Setup datadog config file
+  template: src=datadog.conf.j2 dest=/etc/dd-agent/datadog.conf
+  notify: Restart Datadog agent
+
+- name: Setup datadog basic checks
+  template: src={{ item }}.j2 dest=/etc/dd-agent/conf.d/{{ item }}
+  with_items:
+    - dns_check.yaml
+  notify: Restart Datadog agent
+
+- service: name=datadog-agent state=started
+
+- name: Install Python Datadog module
+  pip: name={{ item }} state=present
+  with_items:
+    - dogapi
+    - datadog

@@ -1,0 +1,165 @@
+  - name: Create DNS entry
+    ovh_dns: state=present domain={{ tld_hostname }} name=owncloud type=CNAME value={{ admin_vm_name }}.{{ tld_hostname }}.
+    tags: dns
+
+  - name: Add Owncloud Nginx conf file
+    template: src=nginx.conf.j2 dest=/etc/nginx/sites-enabled/owncloud.conf mode=0440
+    notify:
+     - Reload Nginx
+
+  - name: Owncloud - MariaDB
+    docker:
+      name: "{{ owncloud.db.host }}"
+      image: mariadb
+      restart_policy: always
+      volumes:
+        - /data/owncloud/mysql:/var/lib/mysql
+      env:
+        MYSQL_DATABASE: "{{ owncloud.db.name }}"
+        MYSQL_USER: "{{ owncloud.db.user }}"
+        MYSQL_PASSWORD: "{{ owncloud.db.pass }}"
+        MYSQL_ROOT_PASSWORD: "{{ owncloud.db.root_pass }}"
+      net: "{{ env }}-net"
+
+  - file: path=/data/owncloud/mysql/dumps state=directory mode=770
+  - file: path=/data/owncloud/etc owner=nobody group=nogroup state=directory mode=770
+  - file: path=/data/owncloud/data owner=nobody group=nogroup state=directory mode=770
+
+  - name: Owncloud - Redis
+    docker:
+      name: owncloud-redis
+      image: redis:latest
+      restart_policy: always
+      volumes:
+        - /data/owncloud/redis:/var/lib/redis
+      net: "{{ env }}-net"
+
+  - name: Owncloud
+    docker:
+      name: "owncloud"
+      image: "{{ owncloud.docker_image }}"
+      restart_policy: always
+      volumes:
+        - /data/owncloud/etc:/usr/share/nginx/html/owncloud/config
+        - /data/owncloud/data:/usr/share/nginx/html/owncloud/data
+        - /data/owncloud/log:/var/log/nginx
+      net: "{{ env }}-net"
+
+  - name: Wait forr DB to start
+    pause: seconds=20
+
+  - name: Create monitoring user in MariaDB
+    command: docker exec {{ owncloud.db.host }} mysql -p{{ owncloud.db.root_pass }} -e "CREATE USER '{{ monitoring.db.user }}'@'%' IDENTIFIED BY '{{ monitoring.db.pass }}';"
+    ignore_errors: yes
+  - name: Create roles for moonitoring processes in MariaDB
+    command: docker exec {{ owncloud.db.host }} mysql -p{{ owncloud.db.root_pass }} -e "GRANT PROCESS ON *.* TO '{{ monitoring.db.user }}'@'%';"
+  - name: Create roles for monitoring perfs in MariaDB
+    command: docker exec {{ owncloud.db.host }} mysql -p{{ owncloud.db.root_pass }} -e "GRANT SELECT ON performance_schema.* TO '{{ monitoring.db.user }}'@'%';"
+
+  - name: Setup DB
+    command: docker exec -t -u nobody owncloud sh -c 'cd /usr/share/nginx/html/owncloud && php -f /usr/share/nginx/html/owncloud/occ  maintenance:install --database=mysql --database-name={{ owncloud['db']['name'] }} --database-host={{ owncloud['db']['host'] }} --database-table-prefix={{ owncloud['db']['table_prefix'] }} --data-dir=/usr/share/nginx/html/owncloud/data  --database-user={{ owncloud['db']['user'] }} --database-pass={{ owncloud['db']['pass'] }} --admin-user={{ owncloud['admin']['user'] }} --admin-pass="{{ owncloud['admin']['pass'] }}"'
+    ignore_errors: yes
+
+  - name: Setup LDAP auth
+    command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ app:enable user_ldap
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:create-empty-config
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapHost ldap
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapPort 389
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapBase {{ ldap['top_dn'] }}
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapAgentName {{ ldap['bind_dn'] }}
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapAgentPassword {{ ldap['pass'] }}
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapBaseGroups {{ ldap['base_groups_dn'] }}
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapBaseUsers {{ ldap['base_users_dn'] }}
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapCacheTTL 600
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapGroupDisplayName cn
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapGroupFilter (&(|(objectclass=groupOfNames)(objectclass=posixGroup))(|(cn=admin)(cn=administrators)(cn=admins)(cn=developpers)(cn=users)))
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapGroupFilterGroups admin;administrators;admins;developpers;users
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapGroupFilterMode 0
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapGroupFilterObjectclass groupOfNames;posixGroup
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapGroupMemberAssocAttr member
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapLoginFilter (&(|(objectclass=inetOrgPerson)(objectclass=posixAccount))(|(uid=%uid)(|(mailPrimaryAddress=%uid)(mail=%uid))(|(mail=%uid)(uid=%uid))))
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapLoginFilterAttributes mail;uid
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapLoginFilterEmail 1
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapLoginFilterMode 0
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapLoginFilterUsername 1
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapNestedGroups 0
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapPagingSize 500
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapTLS 0
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapUserDisplayName cn
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapUserFilter (|(objectclass=inetOrgPerson)(objectclass=posixAccount))
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapUserFilterMode 1
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapUserFilterObjectclass inetOrgPerson;posixAccount
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapUuidGroupAttribute auto
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapUuidUserAttribute auto
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapOffCertCheck 0
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" useMemberOfToDetectMembership 1
+    ignore_errors: yes
+  - command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapConfigurationActive 1
+    ignore_errors: yes
+  #- command: docker exec -t -u nobody owncloud php -f /usr/share/nginx/html/owncloud/occ ldap:set-config "" ldapUserFilterGroups
+  #  ignore_errors: yes
+
+  - name: Setup hostname
+    command: sed -i -e "s/0 => 'localhost',/0 => 'localhost',1 => 'owncloud.{{ tld_hostname }}',/" /data/owncloud/etc/config.php
+
+  - name: Setup Redis cache
+    command: sed -i -e "s/);/'memcache.local' => '\\\\OC\\\\Memcache\\\\Redis', 'memcache.distributed' => '\\\\OC\\\\Memcache\\\\Redis', 'memcache.locking' => '\\\\OC\\\\Memcache\\\\Redis', 'redis' => array('host' => 'owncloud-redis', 'port' => 6379, ), );/" /data/owncloud/etc/config.php
+
+  - name: Create backup folder
+    file: path={{ backup.path }}/{{ env }}/owncloud-data state=directory mode=700
+
+  - name: Cron backup Owncloud DB
+    cron: 
+      name: Cron backup Owncloud DB
+      minute: "0"
+      hour: "3"
+      job: dogwrap -n "Cron backup Owncloud DB" -k {{ datadog.api_key }} --submit_mode errors  "docker exec {{ owncloud.db.host }} mysqldump --all-databases -u root -p{{ owncloud.db.root_pass }} | gzip > {{ backup.path }}/{{ env }}/owncloud-dump-$(date +%Y%m%d%H%M).gz" 2>&1
+    when: backup
+
+  - name: Cron backup Owncloud data
+    cron: 
+      name: Cron backup Owncloud data
+      minute: "0"
+      hour: "3"
+      job: dogwrap -n "Cron backup Owncloud data" -k {{ datadog.api_key }} --submit_mode errors  "rsync -azs /data/owncloud/data {{ backup.path }}/{{ env }}/owncloud-data" 2>&1
+    when: backup
+
+  - name: Cron Owncloud background jobs
+    cron: 
+      name: Cron Owncloud background jobs
+      minute: "*/15"
+      job: dogwrap -n "Cron Owncloud background jobs" -k {{ datadog.api_key }} --submit_mode errors  "curl -k https://owncloud.{{ tld_hostname }}/cron.php" 2>&1
+
+  - name: Restart Nginx
+    command: docker restart nginx

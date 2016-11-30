@@ -1,0 +1,39 @@
+- name: Create DNS entry
+  ovh_dns: state=present domain={{ tld_hostname }} name=jenkins type=CNAME value={{ admin_vm_name }}.{{ tld_hostname }}.
+  tags: dns
+
+- name: Add Jenkins Nginx conf file
+  template: src=nginx.conf.j2 dest=/etc/nginx/sites-enabled/jenkins.conf mode=0440
+  notify:
+   - Reload Nginx
+- file: path=/data/jenkins state=directory owner=root group=root mode=0777
+
+- name: Install http lib2
+  apt: name=python-httplib2 state=present
+
+- name: Add jenkins user to docker group
+  user: name=ubuntu groups=docker shell=/bin/bash home=/home/ubuntu
+
+- name: docker-jenkins-master
+  docker:
+    name: jenkins
+    image: jenkins:1.651.3
+    restart_policy: always
+    volumes:
+      - /data/jenkins:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    #ports:
+    net: "{{ env }}-net"
+- name: Cron backup Jenkins Master
+  cron: 
+    name: Cron backup Jenkins Master
+    minute: "0"
+    hour: "3"
+    job: dogwrap -n "Backup Jenkins" -k {{ datadog.api_key }} --submit_mode errors  "tar zcf {{ backup.path }}/{{ env }}/jenkins-$(date '+%Y%m%d').tar.gz /data/jenkins" 2>&1
+  when: backup
+
+- name: Wait for VM to start and install first requierements
+  pause: seconds=30
+
+- name: Restart Nginx
+  command: docker restart nginx

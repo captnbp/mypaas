@@ -1,0 +1,31 @@
+- name: Create DNS entry
+  ovh_dns: state=present domain={{ tld_hostname }} name=docker-registry type=CNAME value={{ admin_vm_name }}.{{ tld_hostname }}.
+  tags: dns
+
+- name: Add Registry Nginx conf file
+  template: src=nginx.conf.j2 dest=/etc/nginx/sites-enabled/registry.conf mode=0440
+  notify:
+   - Reload Nginx
+
+- name: Debug
+  debug: var=openrc
+
+- name: Add Registry Nginx auth file
+  template: src=docker-registry.htpasswd.j2 dest=/etc/nginx/sites-enabled/docker-registry.htpasswd mode=0444
+  #command: "var=$(docker run --rm=true --entrypoint htpasswd httpd:2.4 -bn {{ registry['user'] }} {{ registry['pass'] }}) && echo $var > /etc/nginx/sites-enabled/docker-registry.htpasswd"
+  notify:
+   - Reload Nginx
+- name: Create Registry config folder on the host
+  file: path=/etc/registry state=directory owner=root mode=0700
+- name: Add Registry conf file
+  template: src=config.yml.j2 dest=/etc/registry/config.yml mode=0440
+- name: Docker Registry
+  docker:
+    name: registry
+    image: "{{ registry.docker_image }}"
+    restart_policy: always
+    volumes:
+      - "/etc/registry/config.yml:/etc/docker/registry/config.yml"
+      - "/data/registry:/var/lib/registry"
+    net: "{{ env }}-net"
+

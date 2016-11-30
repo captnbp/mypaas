@@ -1,0 +1,77 @@
+node('docker') {
+    stage 'Checkout'
+    checkout scm
+
+    sh 'git rev-parse --short HEAD > GIT_COMMIT'
+    short_commit = readFile('GIT_COMMIT').trim()
+    sh 'rm GIT_COMMIT'
+
+    //def pom = readMavenPom file:'pom.xml'
+    //currentBuild.description = "${pom.getVersion()} - ${short_commit}"
+
+    stage 'Build'
+    withMaven {
+        sh 'mvn clean verify'
+        //sh 'mvn compile -DskipTests'
+    }
+
+    //step([$class: 'JUnitResultArchiver', testResults: 'target/surefire-reports/*.xml'])
+    //step([$class: 'JUnitResultArchiver', testResults: 'target/failsafe-reports/*.xml'])
+
+    dir('target') {
+        //archive "${pom.getArtifactId()}.${pom.getPackaging()}"
+        archive "*.jar"
+    }
+
+    //stash name: 'binary', includes: "target/${pom.getArtifactId()}.${pom.getPackaging()}"
+    stash name: 'binary', includes: "target/*.jar"
+    dir('src/main/docker') {
+        stash name: 'dockerfile', includes: 'Dockerfile'
+    }
+}
+
+node('docker') {
+    unstash 'dockerfile'
+    unstash 'binary'
+
+    stage 'Building Docker Img'
+    sh "docker build -t docker-registry.kitstartup.ovh/kitdemo:${short_commit} ."
+
+    //container = image.run('-P')
+    sh "docker run docker-registry.kitstartup.ovh/kitdemo:${short_commit} -P"
+    //containerId = sh "docker ps -q --filter="name=kitdemo""
+    //sh "docker port ${containerId} 8080 > DOCKER_IP"
+    //ip = readFile('DOCKER_IP').trim()
+    //sh 'rm DOCKER_IP'
+}
+
+node('docker') {
+    stage 'Container validation'
+    
+    try {
+        input message: "http://IP. Is it ok?", ok: 'Publish it'
+    } finally {
+
+        //node('docker') { container.stop() }
+    }
+}
+
+node('docker') {
+    stage 'Publish Docker Img'
+    // requirement: local docker registry available on port 5000
+    //sh docker tag registry.kitstartup.ovh/demo/kitdemo:${short_commit}
+    sh "docker push docker-registry.kitstartup.ovh/kitdemo:${short_commit}"
+        //docker.withRegistry('http://localhost:5000', '') {
+      //  image.push('latest')
+    //}
+}
+
+// Custom step
+def withMaven(def body) {
+    //def javaHome = tool name: 'java', type: 'hudson.model.JDK'
+    //def mavenHome = tool name: 'maven-3.3.9', type: 'hudson.tasks.Maven$MavenInstallation'
+
+    withEnv(["JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64", "MAVEN_HOME=/usr/share/maven/bin"]) {
+        body.call()
+    }
+}

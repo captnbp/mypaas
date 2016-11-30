@@ -1,0 +1,8 @@
+- name: Start Nginx
+  shell: docker start nginx
+
+- name: Reload Nginx
+  shell: docker kill -s HUP nginx
+
+- name: Restart Datadog agent
+  shell: docker start stop

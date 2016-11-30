@@ -1,0 +1,13 @@
+- name: Create VMs
+  hosts: localhost
+  tags: ovh
+  roles:
+    - { role: ovh_project, tags: ['ovh', 'ovh_project'] }
+  vars_files:
+    - vars.yml
+  environment:
+    OVH_ENDPOINT: "{{ ovh.endpoint }}"
+    OVH_APPLICATION_KEY: "{{ ovh.application_key }}"
+    OVH_APPLICATION_SECRET: "{{ ovh.application_secret }}"
+    OVH_CONSUMER_KEY: "{{ ovh.consumer_key }}"
+

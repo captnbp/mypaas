@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flow-definition plugin="workflow-job@1.14">
+  <actions/>
+  <description/>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.18.0">
+      <projectUrl>https://github.com/jfouqueray/helloworld.git/</projectUrl>
+      <displayName/>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@1.14">
+    <script>node {
+    try {
+        stage 'Build'
+        git url: 'https://github.com/jfouqueray/helloworld.git'
+        def mvnHome = tool 'Maven 3.3.9'
+        sh "${mvnHome}/bin/mvn -B -f demo/pom.xml install"
+        slackSend: 'END'
+        stage 'Deploy DEV'
+        echo 'Deployment in DEV'
+        stage 'Test DEV'
+        echo 'Testing in DEV'
+        stage 'Deploy UAT'
+        echo 'Deployment in UAT'
+        stage 'Test UAT'
+        echo 'Testing in UAT'
+        slackSend message: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}", color: "#00CC00"
+    }
+    catch (caughtError) {
+        slackSend message: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}", color: "#CC0000"
+    }
+}</script>
+    <sandbox>false</sandbox>
+  </definition>
+  <triggers>
+    <com.cloudbees.jenkins.GitHubPushTrigger plugin="github@1.18.0">
+      <spec/>
+    </com.cloudbees.jenkins.GitHubPushTrigger>
+  </triggers>
+</flow-definition>

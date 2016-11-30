@@ -1,0 +1,5 @@
+---
+
+- name: Restart Datadog Docker agent
+  action: command docker restart dd-agent-{{ env }}
+

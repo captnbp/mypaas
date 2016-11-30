@@ -1,0 +1,93 @@
+- name: Create OVH Cloud project
+  ovh_cloud_project: description={{ cloud.project }} state=present
+
+#- name: Add public a public ssh key to the project
+#  ovh_public_key: name={{ cloud.sshkey.name }} publicKey={{ cloud.sshkey.publicKey }} project_name={{ cloud.project }} state=present
+
+- name: Create Docker Registry object storage
+  ovh_cloud_object_storage: name={{ registry.os.container }} project_name={{ cloud.project }} region={{ cloud.region}} state=present
+
+- name: Create a backup object storage
+  ovh_cloud_object_storage: name={{ backup.os.container }} project_name={{ cloud.project }} region={{ backup.os.region }} state=present
+
+- name: Create admin user
+  ovh_user: project_name={{ cloud.project }} description=admin state=present
+  register: admin_user
+
+- name: Debug
+  debug: var=admin_user
+
+- name: Get admin openrc.sh
+  ovh_openrc: project_name={{ cloud.project }} description=admin region={{ cloud.region }} state=present 
+  register: openrc
+
+- name: Debug
+  debug: var=openrc
+
+- name: Create config folder for clouds.yaml (shade) credentials for openstack
+  file: path=~/.config/openstack state=directory mode=700
+
+- stat: path=~/.config/openstack/clouds.yaml
+  register: cloudconfigfile
+
+#- name: Generate a new password if user already exits, but clouds.yaml config file doesn't exist
+#  ovh_user: project_name={{ cloud.project }} description=admin state=reset
+#  register: admin_user
+#  when: cloudconfigfile.stat.exists == False and admin_user.changed == False
+
+- name: Debug
+  debug: var=admin_user
+
+- name: Create clouds.yaml file to store credentials gathered from openrc and user config
+  template: src=clouds.yaml.j2 dest=~/.config/openstack/clouds.yaml mode=600
+  when: cloudconfigfile.stat.exists == False or admin_user.changed == True
+
+- name: Create backup user
+  ovh_user: project_name={{ cloud.project }} description=backup state=present
+  register: backup_user
+
+- name: Debug
+  debug: var=backup_user
+
+- name: Get backup openrc.sh
+  ovh_openrc: project_name={{ cloud.project }} description=backup region={{ cloud.region }} state=present 
+  register: backupopenrc
+
+- name: Debug
+  debug: var=backupopenrc
+
+- name: Create registry user
+  ovh_user: project_name={{ cloud.project }} description=registry state=present
+  register: registry_user
+
+- name: Debug
+  debug: var=registry_user
+
+- name: Get registry openrc.sh
+  ovh_openrc: project_name={{ cloud.project }} description=registry region={{ cloud.region }} state=present 
+  register: registryopenrc
+
+- name: Debug
+  debug: var=registryopenrc
+- stat: path=./vars-os-users.yml
+  register: varfile
+
+#- name: Generate a new password if user already exits, but vars-os-users.yml config file doesn't exist
+#  ovh_user: project_name={{ cloud.project }} description=backup state=reset
+#  register: backup_user
+#  when: varfile.stat.exists == False and backup_user.changed == False
+
+#- name: Generate a new password if user already exits, but vars-os-users.yml config file doesn't exist
+#  ovh_user: project_name={{ cloud.project }} description=registry state=reset
+#  register: registry_user
+#  when: varfile.stat.exists == False and registry_user.changed == False
+
+- name: Debug
+  debug: var=backup_user
+
+- name: Debug
+  debug: var=registry_user
+
+- name: Create vars-os-users.yml file to store credentials gathered from openrc and user config
+  template: src=vars-os-users.yml.j2 dest=./vars-os-users.yml mode=600
+  when: varfile.stat.exists == False or backup_user.changed == True or registry_user.changed == True

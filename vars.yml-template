@@ -1,0 +1,256 @@
+newuser: ubuntu
+local_user: ""
+admin_vm_name: admin-vm
+tld_hostname: ""
+timezone: "Europe/Paris"
+env: admin
+admin_mail: "admin@{{ tld_hostname }}"
+top_dn: 'dc=mypaas,dc=ovh'
+
+mail:
+  domain: "{{ tld_hostname }}"
+  to: "admin@{{ tld_hostname }}"
+  user: "noreply@{{ tld_hostname }}"
+  pass: ""
+  smtp_host: ssl0.ovh.net
+  smtp_port: 587
+
+fail2ban:
+  # "ignoreip" can be an IP address, a CIDR mask or a DNS host
+  config_ignoreip: 127.0.0.1/8
+  config_bantime: 600
+  config_maxretry: 4
+  config_destemail: "admin@{{ tld_hostname }}"
+  # Jails
+  config_jail_ssh_enabled: yes
+  config_jail_sshddos_enabled: yes
+
+monitoring:
+  db:
+    user: monitoring
+    pass: ""
+datadog:
+  api_key: ""
+  app_key: ""
+  tags: admin
+  pgdb: 
+    user: ddagent
+    pass: ""
+  notifiers:
+    - slack-mypaas
+
+rundeck:
+  ip: rundeck
+  port: 4440
+  docker_image: captnbp/rundeck:2.6.11-1
+  pass: ""
+  secret: ""
+  db:
+    host: rundeck-mariadb
+    name: rundeck
+    user: rundeck
+    pass: ""
+    root_pass: ""
+
+jenkins:
+  docker_image: jenkins
+  ip: jenkins
+  url: "jenkins.{{ tld_hostname }}"
+  port: 8080
+  user: "{{ ldap.users[1].uid }}"
+  password: "{{ ldap.users[1].password }}"
+  view: pipeline-view
+  #GITLAB WEBHOOK KEYS (generate it at the beginning)
+  gitlab_webhook_publickey: "ssh-rsa AAAAB3.................."
+  gitlab_webhook_privatekey: "-----BEGIN RSA PRIVATE KEY-----
+MIIEpQIBAAKCAQEAncbBynDRm7JGHDXd6oIR/cJ+lcbLNTIPE/d86lvoYvmbJMRA
+................................................................
+AyEHCm/Ekjc+yfSzijAS2L6P6Q3o+h9zcQUelG6V/GdT+gGdjex3tF4=
+-----END RSA PRIVATE KEY-----"
+
+  #JENKINS SLAVE KEY : allow to provision a slave (for now on the admin-vm)
+  jenkins_slave_privatekey: "-----BEGIN RSA PRIVATE KEY-----
+MIIEogIBAAKCAQEAybZRhdb2c/BCrvrmSSCD5nYPB+vtZtgw2IaEze6kEmDE3k5G
+................................................................
+ooHy+AnnTabzFQ+SsLvOPhs2jsbtkoiwV7y8wBEiP8T9nYlooBE=
+-----END RSA PRIVATE KEY-----"
+  global_conf:
+    dest: "{{ jenkins_config_dest }}/"
+    # TO CHANGE
+    remote_user: "ubuntu"
+# jenkins_home where configurations files will be copied
+jenkins_config_dest: "/data/jenkins"
+jenkins_jobs:
+  multibranch: 
+    name: JavaDemoApp
+    file: "jobs/job_pipeline_multibranch.xml"
+# workaround for variable in uri body : convert to json
+key_body:
+  title: "deploy key"
+  key: "{{jenkins.gitlab_webhook_publickey}}"
+  _hack: null
+
+#GIT PUSH KEY (generate it at the beginning)
+key_body_push:
+  title: "git push key"
+  key: "ssh-rsa AAAAB3......"
+  _hack: null
+
+slack:
+  team_domain: YOURCOMPANY
+  token: ""
+
+gitlab:
+  version: latest
+  db_version: latest
+  ip: gitlab
+  port: 80
+  db:
+    user: gitlab
+    pass: ""
+    name: gitlabhq_production
+    host: gitlab-postgres
+    postgres_pass: ""
+  secret_db_key_base: ""
+  secret_key_base: ""
+  secret_otp_key_base: ""
+  root_pass: ""
+
+ldap:
+  organization: MY COMPANY
+  domain: "{{ tld_hostname }}"
+  top_dn: "{{ top_dn }}"
+  base_dn: 'ou=users,{{ top_dn }}'
+  base_users_dn: 'ou=users,{{ top_dn }}'
+  base_groups_dn: 'ou=groups,{{ top_dn }}'
+  bind_dn: 'cn=admin,{{ top_dn }}'
+  pass: ""
+  phpldapadmin_port: 80
+  phpldapadmin_ip: phpldapadmin
+  ip: ldap
+  port: 389
+  tls_port: 636
+  users:
+   - sn: Peter
+     givenName: Saluthugues
+     uid: peter
+     password: ""
+     uidNumber: 1001
+     gidNumber: 500
+     mail: peter.saluthugues@mypaas
+   - sn: Steven
+     givenName: Huguessalut
+     uid: steven
+     password: ""
+     uidNumber: 1002
+     gidNumber: 500
+     mail: steven.huguessalut@mypaas
+
+vpn:
+  ssl:
+    country: FR
+    province: IDF
+    city: Paris
+    org: "{{ tld_hostname }}"
+    email: "admin@{{ tld_hostname }}"
+    ou: vpn
+
+owncloud:
+  docker_image: captnbp/docker-owncloud
+  db:
+    user: owncloud
+    pass: ""
+    host: owncloud-mariadb
+    port: 3306
+    name: owncloud
+    table_prefix: "sd56bh4XXXXXXXXX"
+    root_pass: ""
+  admin:
+    user: admin
+    pass: ""
+  ip: owncloud
+  port: 80
+
+odoo:
+  db:
+    name: odoo
+    user: odoo
+    pass: ""
+    port: 5432
+    host: odoo-postgres
+  ip: odoo
+  port: 8069
+
+cloud:
+  project: MYPAAS
+  region: GRA1
+  name: mypaas
+  sshkey:
+    publicKey: 'ssh-rsa AAAAB3"
+    public_key_file: /home/XXXXX/.ssh/id_rsa.pub
+    name: mypaas
+
+admin:
+  name: admin-vm
+  os: "Ubuntu 16.04"
+  key: mypaas
+  flavor: vps-ssd-3
+  security_group: admin
+  udp:
+    - 1194
+  tcp:
+    - 22
+    - 80
+    - 443
+    - 8022
+
+dev:
+  security_group: dev
+  tcp:
+    - 22
+    - 80
+    - 443
+  udp:
+
+prd:
+  security_group: prd
+  tcp:
+    - 22
+    - 80
+    - 443
+  udp:
+
+cluster:
+  os: "Ubuntu 16.04"
+  key: mypaas
+  flavor: vps-ssd-2
+  security_group: cluster
+  ext_network: Ext-Net
+  network_name: mypaas
+  dns:
+    - 8.8.8.8
+    - 8.8.4.4
+
+ovh:
+  application_key: ""
+  application_secret: ""
+  endpoint: ovh-eu
+  consumer_key: ""
+
+registry:
+  docker_image: registry:latest
+  ip: registry
+  port: 5000
+  user: admin
+  pass: ""
+  htpasswd_pass: ""
+  os:
+    region: GRA1
+    container: docker_registry
+
+backup:
+  path: /data/backup
+  encrypting_passphrase: ""
+  os:
+    region: GRA1
+    container: backup

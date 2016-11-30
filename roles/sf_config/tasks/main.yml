@@ -1,0 +1,126 @@
+    #- name: test connection to Jenkins server
+    #  uri: url=https://git.bplease.eu/api/v3/projects?private_token=EZvWcTAgTBzmZaD41gdq
+      #tags:
+       # - always
+        #- test
+
+
+      # TOKEN gitlab https://git.bplease.eu/api/v3/projects?private_token=EZvWcTAgTBzmZaD41gdq
+      # curl --header "PRIVATE-TOKEN: EZvWcTAgTBzmZaD41gdq" "https://git.bplease.eu/api/v3/projects"
+
+      #msg: "the value of uid is {% for user in ldap.users %}{{ user.0.uid }}{% endfor %}"
+
+    # - name: debug
+    #   debug:
+    #     msg: "the value of uid is {{ ldap.users[1].uid }} AND {{ jenkins.user }}"
+
+    - name: get private token from gitlab
+      uri:
+        url: https://git.{{ tld_hostname }}/api/v3/session?login={{ ldap.users[1].uid }}&password={{ ldap.users[1].password }}
+        #url: https://git.{{ tld_hostname }}/api/v3/session?login={% for user in ldap.users %}{{ user.uid.0 }}{% endfor %}&password={% for user in ldap.users %}{{ user.password.0 }}{% endfor %}
+        ##{% for user in ldap.users %}
+        method: POST
+        return_content: yes
+        HEADER_Content-Type: "application/json"
+        status_code: 201
+      register: json_response
+      #with_dict: "{{ ldap }}"
+      tags: 
+        - init
+        - repo
+        - push
+
+    #- name: Assign ssh key to a variable
+    #  vars:
+    #    deployer_user_public_key: "{{ lookup('file','id_rsa.pub') }}"
+      #shell:
+        #cat id_rsa.pub
+      #register: deployer_user_public_key
+
+    # - name: 
+    #   debug:
+    #     msg: "the value of key is {{ deployer_user_public_key }}"
+
+    - name: add the webhook key to gitlab
+      uri:
+        url: https://git.{{ tld_hostname }}/api/v3/user/keys
+        method: POST
+        status_code: 201
+        HEADER_PRIVATE-TOKEN: "{{ json_response.json.private_token }}"
+        HEADER_Content-Type: "application/json"
+        body: "{{ key_body | to_json }}"
+        #body: "{{ jenkins.gitlab_webhook_publickey }}"
+      tags:
+        - init
+      ignore_errors: yes
+
+
+    - name: create the group
+      uri:
+        url: https://git.{{ tld_hostname }}/api/v3/groups
+        method: POST
+        body: "{\"path\": \"demo\", \"name\": \"demo\", \"visibility_level\": \"0\"}"
+        HEADER_PRIVATE-TOKEN: "{{ json_response.json.private_token }}"
+        HEADER_Content-Type: "application/json"
+        status_code: 201
+      register: json_group
+      #with_dict: "{{ ldap }}"
+      tags: 
+        - repo
+      ignore_errors: yes
+
+
+    - name: create the project
+      uri:
+        url: https://git.{{ tld_hostname }}/api/v3/projects
+        method: POST
+        body: ' {"name": "kitdemo", "namespace_id": "{{ json_group.json.id }}", "public": "0"}'
+        HEADER_PRIVATE-TOKEN: "{{ json_response.json.private_token }}"
+        HEADER_Content-Type: "application/json"
+        status_code: 201
+      register: json_project
+      #with_dict: "{{ ldap }}"
+      tags: 
+        - repo
+      ignore_errors: yes
+
+    - name: create webhook config with jenkins
+      uri:
+        url: https://git.{{ tld_hostname }}/api/v3/projects/{{ json_project.json.id }}/hooks
+        method: POST
+        #body: "{\"id\": \"{{ json_project.json.id }}\", \"url\": \"test\"}"
+        body: '{"url": "https://jenkins.kitstartup.ovh/job/JavaDemoApp/build?TOKEN=MYTOKENMYTOKEN"}'
+        HEADER_PRIVATE-TOKEN: "{{ json_response.json.private_token }}"
+        HEADER_Content-Type: "application/json"
+        status_code: 201
+      #register: json_group
+      #with_dict: "{{ ldap }}"
+      tags: 
+        - repo
+      ignore_errors: yes
+
+    - name: add the user push key to gitlab
+      uri:
+        url: https://git.{{ tld_hostname }}/api/v3/user/keys
+        method: POST
+        status_code: 201
+        HEADER_PRIVATE-TOKEN: "{{ json_response.json.private_token }}"
+        HEADER_Content-Type: "application/json"
+        body: "{{ key_body_push | to_json }}"
+        #body: "{{ jenkins.gitlab_webhook_publickey }}"
+      tags:
+        - push
+      ignore_errors: yes
+
+    - name: git add demo project
+      local_action: shell roles/sf_config/tasks/git_push.sh 
+      become_user: "{{ local_user }}"
+      tags:
+        - push
+        #- repo
+      #git init
+      #git add *
+      #git commit -m "commit message"
+      #git push --set-upstream https://git.kitstartup.ovh/demo/kitdemo.git master
+
+

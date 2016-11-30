@@ -1,0 +1,27 @@
+server {
+        listen          [::]:80;
+        listen          80;
+
+        return          404;
+
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   /usr/share/nginx/html;
+        }
+}
+server {
+        listen       [::]:443 ssl http2;
+        listen       443 ssl http2;
+
+        ## SSL
+        ssl_certificate      /etc/letsencrypt/live/admin.{{ tld_hostname }}/fullchain.pem;
+        ssl_certificate_key  /etc/letsencrypt/live/admin.{{ tld_hostname }}/privkey.pem;
+        ssl_dhparam /etc/ssl/private/{{ tld_hostname }}.dhparam.crt;
+
+        return          404;
+
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   /usr/share/nginx/html;
+        }
+}

@@ -1,0 +1,44 @@
+version: 0.1
+log:
+  level: info
+  formatter: text
+  fields:
+    service: registry
+    environment: staging
+  hooks:
+    - type: mail
+      disabled: true
+      levels:
+        - panic
+      options:
+        smtp:
+          addr: {{ mail['smtp_host'] }}:{{ mail['smtp_port'] }}
+          username: {{ mail['user'] }}
+          password: {{ mail['pass'] }}
+          insecure: false
+        from: {{ mail['user'] }}
+        to:
+          - {{ mail['to'] }}
+storage:
+  swift:
+    username: {{ registry_user.user.username }}
+    password: {{ registry_user.user.password }}
+    authurl: {{ openrc.openrc.auth_url }}
+    region: {{ openrc.openrc.region_name }}
+    container: {{ registry.os.container }}
+    tenantid: {{ openrc.openrc.tenant_id }}
+    tenant: "{{ openrc.openrc.tenant_name }}"
+  delete:
+    enabled: true
+  redirect:
+    disable: false
+  maintenance:
+    uploadpurging:
+      enabled: true
+      age: 168h
+      interval: 24h
+      dryrun: false
+    readonly:
+      enabled: false
+http:
+  addr: :5000

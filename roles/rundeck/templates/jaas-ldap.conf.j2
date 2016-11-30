@@ -1,0 +1,22 @@
+ldap {
+    com.dtolabs.rundeck.jetty.jaas.JettyCachingLdapLoginModule required
+      debug="true"
+      contextFactory="com.sun.jndi.ldap.LdapCtxFactory"
+      providerUrl="{{ auth['ldap_url'] }}"
+      bindDn="cn=Manager,{{ auth['base_dn'] }}"
+      bindPassword="secrent"
+      authenticationMethod="simple"
+      forceBindingLogin="false"
+      userBaseDn="ou=users,{{ auth['base_dn'] }}"
+      userRdnAttribute="uid"
+      userIdAttribute="uid"
+      userPasswordAttribute="userPassword"
+      userObjectClass="account"
+      roleBaseDn="ou=Groups,{{ auth['base_dn'] }}"
+      roleNameAttribute="cn"
+      roleUsernameMemberAttribute="memberUid"
+      roleMemberAttribute="memberUid"
+      roleObjectClass="posixGroup"
+      cacheDurationMillis="300000"
+      reportStatistics="true";
+};

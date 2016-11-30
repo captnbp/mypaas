@@ -1,0 +1,10 @@
+clouds:
+  {{ cloud.name }}:
+    region_name: {{ cloud.region }}
+    auth:
+      auth_url: {{ openrc.openrc.os_auth_url }}
+      username: {{ admin_user.user.username }}
+      password: {{ admin_user.user.password }}
+      project_name: {{ cloud.project }}
+      tenant_id: {{ openrc.openrc.os_tenant_id }}
+      tenant_name: {{ openrc.openrc.os_tenant_name }}

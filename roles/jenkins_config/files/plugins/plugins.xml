@@ -1,0 +1,21 @@
+<jenkins>
+	<install plugin="ldap@latest"/>
+	<install plugin="datadog@latest"/>
+	<install plugin="delivery-pipeline-plugin@latest"/>
+	<install plugin="git-client@latest"/>
+	<install plugin="git@latest"/>
+	<install plugin="github@latest"/>
+	<install plugin="m2release@latest"/>
+	<install plugin="slack@latest"/>
+	<install plugin="sonar@latest"/>
+	<install plugin="maven-plugin@latest"/>
+	<install plugin="build-monitor-plugin@latest"/>
+	<install plugin="workflow-aggregator@latest"/>
+	<install plugin="pipeline-stage-view@latest"/>
+	<install plugin="workflow-multibranch@latest"/>
+	<install plugin="docker-build-publish@latest"/>
+	<install plugin="docker-workflow@latest"/>
+	<install plugin="docker-commons@latest"/>
+	<install plugin="docker-plugin@latest"/>
+	<install plugin="docker-build-step@latest"/>
+</jenkins>

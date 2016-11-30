@@ -1,0 +1,65 @@
+  - name: Create DNS entry
+    ovh_dns: state=present domain={{ tld_hostname }} name=odoo type=CNAME value={{ admin_vm_name }}.{{ tld_hostname }}.
+    tags: dns
+
+  - name: Add Odoo Nginx conf file
+    template: src=nginx.conf.j2 dest=/etc/nginx/sites-enabled/odoo.conf mode=0440
+    notify:
+     - Reload Nginx
+  - name: Odoo - Postgres
+    docker:
+      name: "odoo-postgres"
+      image: postgres
+      volumes:
+        - /data/odoo/postgresql/data:/var/lib/postgresql/data
+      env:
+        POSTGRES_USER: "{{ odoo.db.user }}"
+        POSTGRES_PASSWORD: "{{ odoo.db.pass }}"
+      net: "{{ env }}-net"
+
+  - file: path=/data/odoo/postgresql/dumps state=directory mode=770
+  - file: path=/data/odoo/etc state=directory mode=770
+  - file: path=/data/odoo/data state=directory owner=sshd group=mlocate mode=777
+
+  - name: Add Odoo conf file
+    template: src=openerp-server.conf.j2 dest=/data/odoo/etc/openerp-server.conf mode=0440
+
+  - name: Odoo
+    docker:
+      name: "odoo"
+      image: odoo
+      volumes:
+        - /data/odoo/etc:/etc/odoo
+        - /data/odoo/data:/var/lib/odoo
+        - /data/odoo/extra-addons:/mnt/extra-addons
+      env:
+        PGUSER: "{{ odoo.db.user }}"
+        PGPASSWORD: "{{ odoo.db.pass }}"
+        PGHOST: "odoo-postgres"
+        PGPORT: 5432
+      net: "{{ env }}-net"
+
+  #- name: Create user in Postgresql for monitoring 
+  #  postgresql_user: login_host=127.0.0.1 login_user={{ odoo.db.user }} login_password={{ odoo.db.pass }} db=postgres name={{ monitoring.db.user }} password={{ monitoring.db.pass }} priv=pg_stat_database:SELECT
+  #  when: monitoring
+
+  - name: Create user in Postgresql for monitoring 
+    command: docker exec odoo-postgres psql -U postgres -c "create user {{ monitoring.db.user }} with password '{{ monitoring.db.pass }}';"   
+    ignore_errors: yes
+  - name: Set role in Postgresql for monitoring 
+    command: docker exec odoo-postgres psql -U postgres -c "grant SELECT ON pg_stat_database to {{ monitoring.db.user }};"   
+
+  - name: Cron backup Odoo DB
+    cron:
+      name: Cron backup Odoo DB
+      minute: "0"
+      hour: "3"
+      job: dogwrap -n "Backup Odoo DB" -k {{ datadog.api_key }} --submit_mode errors  "docker exec odoo-postgres pg_dumpall -U {{ odoo.db.user }} | gzip > {{ backup.path }}/{{ env }}/odoo-dump-$(date +%Y%m%d%H%M).gz" 2>&1
+    when: backup
+  - name: Cron backup Odoo Data
+    cron:
+      name: Cron backup Odoo Data
+      minute: "0"
+      hour: "3"
+      job: dogwrap -n "Backup Odoo Data" -k {{ datadog.api_key }} --submit_mode errors  "tar zcf {{ backup.path }}/{{ env }}/odoo-data-$(date +%Y%m%d%H%M).tar.gz /data/odoo/data /data/odoo/extra-addons " 2>&1
+    when: backup

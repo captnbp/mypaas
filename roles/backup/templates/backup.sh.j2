@@ -1,0 +1,41 @@
+#
+# This script was created to make Duplicity backups.
+# Full backups are made on the 1st day of each month.
+# Then incremental backups are made on the other days.
+#
+export SWIFT_USERNAME={{ backup_user.user.username }}
+export SWIFT_PASSWORD={{ backup_user.user.password }}
+export SWIFT_AUTHURL={{ openrc.openrc.auth_url }}
+export SWIFT_AUTHVERSION=2
+export SWIFT_TENANTNAME={{ openrc.openrc.tenant_name }}
+export SWIFT_REGIONNAME={{ openrc.openrc.region_name }}
+
+src="/data/backup/"
+dest="swift://backup"
+
+# GnuPG
+export PASSPHRASE="{{ backup.encrypting_passphrase }}"
+
+
+duplicity --verbosity notice --full-if-older-than 1M --num-retries 3 --asynchronous-upload --volsize 10  "${src}" "${dest}"
+if [ $? -eq 1 ]
+then
+        exit 1
+fi
+
+# Deleting old backups
+duplicity remove-older-than 12M --force ${dest} >> ./backup.log
+if [ $? -eq 1 ]
+then
+        exit 1
+fi
+
+# Unsetting the confidential variables so they are
+# gone for sure.
+unset PASSPHRASE
+
+find ${src}/prd/* -mtime +5 -exec rm {} \;
+find ${src}/uat/* -mtime +5 -exec rm {} \;
+find ${src}/dev/* -mtime +5 -exec rm {} \;
+
+exit 0

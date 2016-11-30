@@ -1,0 +1,66 @@
+  - name: Create DNS entry
+    ovh_dns: state=present domain={{ tld_hostname }} name=jenkins type=CNAME value={{ admin_vm_name }}.{{ tld_hostname }}.
+    tags: dns
+
+  - name: Add PHPLDAPadmin Nginx conf file
+    template: src=nginx.conf.j2 dest=/etc/nginx/sites-enabled/ldap.conf mode=0440
+    notify:
+     - Reload Nginx
+  - name: Configure ufw LDAP
+    ufw: rule=allow port=389 proto=tcp
+  - name: Configure ufw LDAPs
+    ufw: rule=allow port=636 proto=tcp
+  - name: LDAP
+    docker:
+      name: ldap
+      hostname: ldap.{{ tld_hostname }}
+      image: osixia/openldap
+      restart_policy: always
+      volumes: 
+        - /data/ldap/database:/var/lib/ldap
+        - /data/ldap/config:/etc/ldap/slapd.d
+        - /data/ldap/backup:/data/backup
+      ports:
+        - "{{ ldap['port'] }}:389"
+        - "{{ ldap['tls_port'] }}:636"
+      net: "{{ env }}-net"
+      env:
+        LDAP_ORGANISATION: "{{ ldap['organization'] }}"
+        LDAP_DOMAIN: "{{ ldap['domain'] }}"
+        LDAP_ADMIN_PASSWORD: "{{ ldap['pass'] }}"
+  - name: phpLDAPadmin
+    docker:
+      name: phpldapadmin
+      image: osixia/phpldapadmin
+      restart_policy: always
+      net: "{{ env }}-net"
+      env:
+        PHPLDAPADMIN_HTTPS: false
+        PHPLDAPADMIN_LDAP_HOSTS: "ldap"
+  - name: ldap-backup
+    docker:
+      name: ldap-backup
+      image: osixia/openldap-backup
+      restart_policy: always
+      volumes:
+        - /data/ldap/database:/var/lib/ldap
+        - /data/ldap/config:/etc/ldap/slapd.d
+        - /data/ldap/backup:/data/backup
+
+  - name: Create backup folder for LDAP
+    file: path={{ backup.path }}/{{ env }}/ldap/ mode=700 state=directory
+
+  - name: Cron backup LDAP
+    cron: 
+      name: Cron backup LDAP
+      minute: "10"
+      hour: "4"
+      job: dogwrap -n "Cron backup LDAP data" -k {{ datadog.api_key }} --submit_mode errors  "mv /data/ldap/backup/* {{ backup.path }}/{{ env }}/ldap/" 2>&1
+    when: backup
+
+  - name: Generate LDAP init file
+    template: src=init.ldif.j2 dest=/data/ldap/database/init.ldif mode=422
+  - name: Initialize the LDAP repo
+    command: docker exec ldap ldapadd -H ldap://localhost -x -D "{{ ldap['bind_dn'] }}" -f /var/lib/ldap/init.ldif -w "{{ ldap['pass'] }}"
+  - name: Delete init ldif file
+    file: path=/data/ldap/database/init.ldif state=absent

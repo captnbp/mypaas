@@ -1,0 +1,72 @@
+  - name: Create DNS entry
+    ovh_dns: state=present domain={{ tld_hostname }} name=vpn type=CNAME value={{ admin_vm_name }}.{{ tld_hostname }}.
+    tags: dns
+
+  - name: Configure ufw OpenVPN
+    ufw: rule=allow port=1194 proto=udp
+
+  - name: Create config folder
+    file: path=/data/openvpn state=directory mode=0700
+
+  - name: Add config file for the CA
+    template: src=vars.j2 dest=/data/openvpn/vars mode=0700
+
+  - name: Initialize the config folder that will hold the configuration files and certificates
+    command: docker run -v /data/openvpn:/etc/openvpn --rm kylemanna/openvpn ovpn_genconfig -u udp://vpn.{{ tld_hostname }} -z  -C 'AES-256-CBC' -a 'SHA384' -T 'DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-CAMELLIA256-SHA:DHE-RSA-AES256-SHA:DHE-RSA-CAMELLIA128-SHA:DHE-RSA-AES128-SHA:CAMELLIA256-SHA:AES256-SHA:CAMELLIA128-SHA:AES128-SHA'
+    args:
+      creates: /data/openvpn/openvpn.conf
+
+  - name: Create the PKI
+    command: docker run -v /data/openvpn:/etc/openvpn --rm kylemanna/openvpn easyrsa init-pki
+    args:
+      creates: /data/openvpn/pki
+
+  - name: Create the CA
+    command: docker run -v /data/openvpn:/etc/openvpn --rm kylemanna/openvpn easyrsa --batch build-ca nopass
+    args:
+      creates: /data/openvpn/pki/private/ca.key
+
+  - name: Create the dh
+    command: docker run -v /data/openvpn:/etc/openvpn --rm kylemanna/openvpn easyrsa gen-dh
+    args:
+      creates: /data/openvpn/pki/dh.pem
+
+  - name: Create the key
+    command: docker run -v /data/openvpn:/etc/openvpn --rm kylemanna/openvpn openvpn --genkey --secret /etc/openvpn/pki/ta.key
+    args:
+      creates: /data/openvpn/pki/ta.key
+
+  - name: Create the server key
+    command: docker run -v /data/openvpn:/etc/openvpn --rm kylemanna/openvpn easyrsa build-server-full "vpn.{{ tld_hostname }}" nopass
+    args:
+      creates: /data/openvpn/pki/private/vpn.{{ tld_hostname }}.key
+
+  - name: Generate a client certificate without a passphrase
+    command: docker run -v /data/openvpn:/etc/openvpn --rm kylemanna/openvpn easyrsa build-client-full admin nopass
+    args:
+      creates: /data/openvpn/pki/issued/admin.crt
+
+  - name: Export ovpn file 
+    command: docker run -v /data/openvpn:/etc/openvpn --rm kylemanna/openvpn ovpn_getclient admin > /home/admin/admin.ovpn
+    args:
+      creates: /home/admin/admin.ovpn
+      
+  - name: Start OpenVPN
+    docker:
+      name: vpn
+      image: kylemanna/openvpn
+      volumes: 
+        - /data/openvpn:/etc/openvpn
+      ports:
+        - "1194:1194/udp"
+      cap_add:
+        - NET_ADMIN 
+      restart_policy: always
+
+  - name: Cron backup OpenVPN
+    cron: 
+      name: Cron backup OpenVPN
+      minute: "20"
+      hour: "4"
+      job: dogwrap -n "Cron backup OpenVPN data" -k {{ datadog.api_key }} --submit_mode errors  "tar zcf {{ backup.path }}/{{ env }}/openvpn-$(date '+%Y%m%d').tar.gz /data/openvpn" 2>&1
+    when: backup

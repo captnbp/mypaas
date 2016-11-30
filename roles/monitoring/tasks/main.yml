@@ -1,0 +1,39 @@
+- name: Run DatadigHQ Agent Docker on {{ env }}-net
+  docker:
+    name: dd-agent-{{ env }}
+    image: datadog/docker-dd-agent
+    restart_policy: always
+    net: "{{ env }}-net"
+    hostname: admin-vm
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/proc/:/host/proc/:ro"
+      - "/sys/fs/cgroup/:/host/sys/fs/cgroup:ro"
+      - "/data/dd-agent:/conf.d:ro"
+    env:
+      API_KEY: 83b23b6ff4580e3ca9fabe1bf50d5003
+
+- name: Setup default Datadog config files
+  template: src={{ item }}.j2 dest=/data/dd-agent/{{ item }} mode=0640 owner=dd-agent
+  with_items:
+    - postgres.yaml
+    - mysql.yaml
+    - redisdb.yaml
+  when: monitoring
+  notify: Restart Datadog Docker agent
+
+- name: Setup datadog basic checks
+  template: src={{ item }}.j2 dest=/etc/dd-agent/conf.d/{{ item }}
+  with_items:
+    - http_check.yaml
+
+- datadog_monitor:
+    type: "service check"
+    name: "HTTP check"
+    state: "present"
+    query: '"http.can_connect".over("env:admin").last(3).count_by_status()'
+    message: "HTTP test failed@benoit.pourre@d2-si.eu @@slack-startupkit"
+    api_key: "{{ datadog.api_key }}"
+    app_key: "{{ datadog.app_key }}"
+
+  notify: Restart Datadog agent

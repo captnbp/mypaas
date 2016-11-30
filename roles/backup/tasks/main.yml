@@ -1,0 +1,56 @@
+---
+- name: Install Rsync
+  apt: name=rsync state=present
+
+- name: Install Duplicity
+  apt: name=duplicity state=present
+
+- name: Install Python Swift client
+  apt: name=python-swiftclient state=present
+
+- name: Install Python Keystone client
+  apt: name=python-keystoneclient state=present
+
+- name: Install GPG
+  apt: name=gnupg2 state=present
+
+- file: path={{ backup.path }} state=directory mode=0700
+- file: path={{ backup.path }}/admin state=directory mode=0700
+- file: path={{ backup.path }}/dev state=directory mode=0700
+- file: path={{ backup.path }}/uat state=directory mode=0700
+- file: path={{ backup.path }}/pprd state=directory mode=0700
+- file: path={{ backup.path }}/prd state=directory mode=0700
+#- file: path=/var/backups state=directory mode=0700 owner=backup
+
+#- name: Create batch file for GPG signing key creation
+#  template: src=signing.j2 dest=/var/backups/signing owner=backup
+
+#- name: Create batch file for GPG encyption key creation
+#  template: src=encrypting.j2 dest=/var/backups/encrypting owner=backup
+
+- name: Create backup script
+  template: src=backup.sh.j2 dest=/var/backups/backup.sh mode=0700 owner=backup
+
+#- name: Create Signing key
+#  command: gpg2 --batch --gen-key /var/backups/signing
+#  become: true
+
+#- name: Create Encrypting key
+#  command: gpg2 --batch --gen-key /var/backups/encrypting
+#  become_user: backup
+
+#- name: Delete Signing key config file
+#  file: path=/var/backups/signing state=absent
+
+#- name: Delete Encrypting key config file
+#  file: path=/var/backups/encrypting state=absent
+
+- name: Cron archive backup 
+  cron:
+    name: Cron archive backup
+    minute: "10"
+    hour: "5"
+    job: dogwrap -n "Cron archive backup" -k {{ datadog.api_key }} --submit_mode errors  "/var/backups/backup.sh" 2>&1
+    user: root
+  when: backup
+

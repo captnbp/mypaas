@@ -1,0 +1,107 @@
+  - name: Create DNS entry
+    ovh_dns: state=present domain={{ tld_hostname }} name=git type=CNAME value={{ admin_vm_name }}.{{ tld_hostname }}.
+    tags: dns
+
+  - name: Add Gitlab Nginx conf file
+    template: src=nginx.conf.j2 dest=/etc/nginx/sites-enabled/gitlab.conf mode=0440
+    notify:
+     - Reload Nginx
+  - name: Configure ufw SSH Git
+    ufw: rule=allow port=8022 proto=tcp
+
+  - name: Gitlab - Postgres
+    docker: 
+      name: gitlab-postgres
+      image: "sameersbn/postgresql:latest"
+      volumes:
+        - /data/gitlab/postgresql:/var/lib/postgresql
+      env:
+        DB_USER: "{{ gitlab.db.user }}"
+        DB_PASS: "{{ gitlab.db.pass }}"
+        DB_NAME: "{{ gitlab.db.name }}"
+        PG_PASSWORD: "{{ gitlab.db.postgres_pass }}"
+        DB_EXTENSION: pg_trgm
+      net: "{{ env }}-net"
+      ports:
+        - "localhost:5432:5432"
+      restart_policy: always
+  - name: Gitlab - Redis
+    docker:
+      name: gitlab-redis
+      image: redis:latest
+      volumes:
+        - /data/gitlab/redis:/var/lib/redis
+      net: "{{ env }}-net"
+      restart_policy: always
+  - name: Gitlab
+    docker:
+      name: gitlab
+      image: "sameersbn/gitlab:{{ gitlab.version }}"
+      volumes: 
+        - /data/gitlab/gitlab:/home/git/data
+      ports:
+        - "8022:22"
+      net: "{{ env }}-net"
+      env:
+        TZ: Europe/Paris
+        SMTP_ENABLED: true
+        SMTP_DOMAIN: "{{ mail['domain'] }}"
+        SMTP_HOST: "{{ mail['smtp_host'] }}"
+        SMTP_PORT: "{{ mail['smtp_port'] }}"
+        SMTP_USER: "{{ mail['user'] }}"
+        SMTP_PASS: "{{ mail['pass'] }}"
+        SMTP_STARTTLS: "true"
+        SMTP_AUTHENTICATION: login
+        GITLAB_SECRETS_DB_KEY_BASE: "{{ gitlab['secret_db_key_base'] }}"
+        GITLAB_SECRETS_SECRET_KEY_BASE: "{{ gitlab['secret_key_base'] }}"
+        GITLAB_SECRETS_OTP_KEY_BASE: "{{ gitlab['secret_otp_key_base'] }}"
+        GITLAB_ROOT_PASSWORD: "{{ gitlab['root_pass'] }}"
+        GITLAB_TIMEZONE: 'Kolkata'
+        GITLAB_HOST: "git.{{ tld_hostname }}"
+        GITLAB_PORT: 443
+        GITLAB_HTTPS: "true"
+        GITLAB_SSH_PORT: 8022
+        GITLAB_EMAIL: "{{ mail['user'] }}"
+        GITLAB_EMAIL_REPLY_TO: "{{ mail['user'] }}"
+        GITLAB_BACKUPS: daily
+        GITLAB_BACKUP_TIME: 01:00
+        DB_TYPE: postgres
+        DB_HOST: gitlab-postgres
+        DB_PORT: 5432
+        DB_USER: "{{ gitlab.db.user }}"
+        DB_PASS: "{{ gitlab.db.pass }}"
+        DB_NAME: "{{ gitlab.db.name }}"
+        REDIS_HOST: gitlab-redis
+        REDIS_PORT: 6379
+        LDAP_ENABLED: true
+        LDAP_LABEL: LDAP
+        LDAP_HOST: "{{ ldap['ip'] }}"
+        LDAP_PORT: "{{ ldap['port'] }}"
+        LDAP_UID: uid
+        LDAP_METHOD: plain
+        LDAP_BIND_DN: "{{ ldap['bind_dn'] }}"
+        LDAP_PASS: "{{ ldap['pass'] }}"
+        LDAP_ACTIVE_DIRECTORY: false
+        LDAP_ALLOW_USERNAME_OR_EMAIL_LOGIN: true
+        LDAP_BLOCK_AUTO_CREATED_USERS: false
+        LDAP_BASE: "{{ ldap['base_dn'] }}"
+        #LDAP_USER_FILTER: (&(objectClass=posixAccount)(uid=%{user}))
+      restart_policy: always
+
+#  - name: Create Datadog user in Postgresql for monitoring 
+#    postgresql_user: login_host=127.0.0.1 login_user=postgres login_password={{ gitlab.db.postgres_pass }} db=postgres name={{ monitoring.db.user }} password={{ monitoring.db.pass }} priv=pg_stat_database:SELECT
+#    when: monitoring
+
+  - name: Create user in Postgresql for monitoring 
+    command: docker exec gitlab-postgres psql -U postgres -c "create user {{ monitoring.db.user }} with password '{{ monitoring.db.pass }}';"   
+    ignore_errors: yes
+  - name: Set role in Postgresql for monitoring 
+    command: docker exec gitlab-postgres psql -U postgres -c "grant SELECT ON pg_stat_database to {{ monitoring.db.user }};"   
+
+
+  - cron: 
+      name: Cron backup Gitlab
+      minute: "0"
+      hour: "3"
+      job: dogwrap -n "Backup Gitlab dump" -k {{ datadog.api_key }} --submit_mode errors \"mv /data/gitlab/gitlab/backups/* {{ backup.path }}/{{ env }}/\"" 2>&1
+    when: backup

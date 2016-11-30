@@ -1,0 +1,28 @@
+- name: get setuptools
+  apt: name=python-setuptools state=present
+ 
+- name: make sure pip works
+  shell: easy_install -U pip creates=/usr/local/bin/pip
+ 
+- name: install docker-py
+  pip: name=docker-py state=present
+ 
+- name: install docker-compose
+  pip: name=docker-compose state=present
+
+- name: Install Docker Machine
+  get_url: url=https://github.com/docker/machine/releases/download/v0.8.0/docker-machine-Linux-x86_64 dest=/usr/local/bin/docker-machine mode=0555
+
+- name: Check if Datadog config file exists
+  stat: path=/etc/dd-agent/conf.d/docker_daemon.yaml.example
+  register: datadog_docker_daemon
+
+- name: Add dd-agent user to docker group
+  user: name=dd-agent groups=docker shell=/bin/sh home=/opt/datadog-agent
+  when: monitoring
+
+- name: Setup default Datadog config file for Docker
+  command: cp /etc/dd-agent/conf.d/docker_daemon.yaml.example /etc/dd-agent/conf.d/docker_daemon.yaml
+  when: monitoring
+  notify: Restart Datadog agent
+

@@ -1,0 +1,13 @@
+  - name: Add phppgadmin Nginx conf file
+    template: src=nginx.conf.j2 dest=/etc/nginx/sites-enabled/phppgadmin-{{ env }}.conf mode=0440
+    notify:
+     - Reload Nginx
+  - name: phpPGAdmin
+    docker:
+      name: phppgadmin
+      image: docker-registry.sandbdigital.com/docker-phppgadmin:latest
+      restart_policy: always
+      net: "{{ env }}"
+      #ports:
+      #  - "{{ api['docker_port_option'] }}{{ phppgadmin['port'] }}:80"
+      net: "{{ env }}-net"

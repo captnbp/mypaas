@@ -1,0 +1,5 @@
+- name: get jdk
+  apt: name=openjdk-8-jdk state=present
+
+- name: get maven
+  apt: name=maven state=present

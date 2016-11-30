@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<slave>
+  <name>docker-slave</name>
+  <description></description>
+  <remoteFS>/home/ubuntu/data/jenkins-slave</remoteFS>
+  <numExecutors>1</numExecutors>
+  <mode>NORMAL</mode>
+  <retentionStrategy class="hudson.slaves.RetentionStrategy$Always"/>
+  <launcher class="hudson.plugins.sshslaves.SSHLauncher" plugin="ssh-slaves@1.9">
+    <host>admin.kitstartup.ovh</host>
+    <port>22</port>
+    <credentialsId>47f27348-f578-4a89-84cb-a158a3979d0f</credentialsId>
+    <maxNumRetries>0</maxNumRetries>
+    <retryWaitTime>0</retryWaitTime>
+  </launcher>
+  <label>docker</label>
+  <nodeProperties>
+    <hudson.slaves.EnvironmentVariablesNodeProperty>
+      <envVars serialization="custom">
+        <unserializable-parents/>
+        <tree-map>
+          <default>
+            <comparator class="hudson.util.CaseInsensitiveComparator"/>
+          </default>
+          <int>4</int>
+          <string>JAVA_HOME</string>
+          <string>/usr/lib/jvm/java-1.8.0-openjdk-amd64</string>
+          <string>M2_HOME</string>
+          <string>/usr/share/maven</string>
+          <string>MAVEN_HOME</string>
+          <string>/usr/share/maven/bin</string>
+          <string>PATH</string>
+          <string>$PATH:/usr/share/maven/bin:/usr/lib/jvm/java-1.8.0-openjdk-amd64</string>
+        </tree-map>
+      </envVars>
+    </hudson.slaves.EnvironmentVariablesNodeProperty>
+  </nodeProperties>
+  <userId>anonymous</userId>
+</slave>

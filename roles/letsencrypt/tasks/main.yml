@@ -1,0 +1,40 @@
+# tasks file for letsencrypt
+- name: Configure ufw http
+  ufw: rule=allow port=http proto=tcp
+
+- name: Configure ufw https
+  ufw: rule=allow port=https proto=tcp
+
+
+- name: Install common packages
+  apt:
+    name={{ item }}
+    update_cache=yes
+    cache_valid_time=86400
+    install-recommends=no
+    state=present
+  with_items:
+   - ca-certificates
+   - dialog
+   - gcc
+   - git-core
+   - libaugeas0
+   - libffi-dev
+   - python
+   - python-dev
+
+- name: clone git repository
+  git:
+    repo=https://github.com/letsencrypt/letsencrypt
+    dest={{ letsencrypt_git }}
+    depth=1
+    accept_hostkey=yes
+
+- name: install dependencies
+  shell: cd {{ letsencrypt_git }} && ./letsencrypt-auto --help
+
+- name: Create certificates
+  command: /var/git/letsencrypt/letsencrypt-auto certonly --non-interactive --agree-tos --standalone --email admin@{{ tld_hostname }} -d admin.{{ tld_hostname }} -d jenkins.{{ tld_hostname }} -d vpn.{{ tld_hostname }} -d ldap.{{ tld_hostname }} -d git.{{ tld_hostname }} -d docker-registry.{{ tld_hostname }} -d vault.{{ tld_hostname }} -d wiki.{{ tld_hostname }} -d rundeck.{{ tld_hostname }} -d owncloud.{{ tld_hostname }} -d odoo.{{ tld_hostname }}
+  args:
+    creates: /etc/letsencrypt/archive/admin.{{ tld_hostname }}/fullchain1.pem
+

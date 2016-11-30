@@ -1,0 +1,20 @@
+- name: Install OVH pyhton module
+  pip: name=ovh state=present
+  become: true
+
+- name: Install libssl-dev for shade
+  apt: name=libssl-dev state=present
+  become: true
+
+#- name: Install Shade for Openstack tools
+#  pip: name=shade state=present
+#  become: true
+
+- name: Install Shade for Openstack module
+  apt: name=python-shade state=present
+  become: true
+
+- name: Add sshpubkeys Python package
+  pip: name=sshpubkeys state=present
+  become: true
+

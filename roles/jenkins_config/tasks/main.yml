@@ -1,0 +1,129 @@
+    #- name: test connection to Jenkins server
+    #  uri: url=http://{{ jenkins.url }}:{{ jenkins.port }}
+    #  tags:
+    #    - always
+    #    - test
+
+    - name: add the plugins
+      uri:
+        url: https://{{ jenkins.url }}/pluginManager/installNecessaryPlugins
+        #url: http://{{ jenkins.host }}/job/{{ jenkins.job }}/build?token={{ jenkins.token }}
+        method: POST
+        user: "{{ jenkins.user }}"
+        password: "{{ jenkins.password }}"
+        force_basic_auth: yes
+        validate_certs: no
+        body: "{{ lookup('file','plugins/plugins.xml') }}"
+        HEADER_Content-Type: "application/xml"
+        status_code: 302
+        #body_format: json
+      tags: 
+        - init
+        - update
+        - plugins
+
+    #PAUSE to wait for plugins installation
+    - pause: minutes=3
+      tags:
+        - init
+
+    - name: add Jenkins global configuration (plugins configuration, security, ...)
+      copy: src=global/ dest={{ jenkins.global_conf.dest }} owner={{ jenkins.global_conf.remote_user }} group={{ jenkins.global_conf.remote_user }} mode=0640
+      tags: 
+        - init
+        - config
+
+    - name: Add Jenkins Credentials conf file
+      template: src=credentials.xml.j2 dest={{ jenkins.global_conf.dest }}/credentials.xml owner={{ jenkins.global_conf.remote_user }} group={{ jenkins.global_conf.remote_user }} mode=0640
+      tags:
+        - init
+        - config
+
+    - name: Add Jenkins global config file
+      template: src=config.xml.j2 dest={{ jenkins.global_conf.dest }}/config.xml owner={{ jenkins.global_conf.remote_user }} group={{ jenkins.global_conf.remote_user }} mode=0640
+      tags:
+        - init
+        - config
+
+    - name: Add Jenkins global config file
+      template: src=jenkins.plugins.slack.SlackNotifier.xml.j2 dest={{ jenkins.global_conf.dest }}/jenkins.plugins.slack.SlackNotifier.xml owner={{ jenkins.global_conf.remote_user }} group={{ jenkins.global_conf.remote_user }} mode=0640
+      tags:
+        - init
+        - config
+
+    - name: Add Jenkins datadog conf file
+      template: src=org.datadog.jenkins.plugins.datadog.DatadogBuildListener.xml.j2 dest={{ jenkins.global_conf.dest }}/org.datadog.jenkins.plugins.datadog.DatadogBuildListener.xml owner={{ jenkins.global_conf.remote_user }} group={{ jenkins.global_conf.remote_user }} mode=0640
+      tags:
+        - init
+        - config
+
+    - name: Jenkins restart after install
+      uri:
+        url: https://{{ jenkins.url }}/safeRestart
+        user: "{{ jenkins.user }}"
+        password: "{{ jenkins.password }}"
+        force_basic_auth: yes
+        validate_certs: no
+        method: POST
+        status_code: 302
+      tags:
+        - init
+        - config
+        - restart
+
+    - name: Wait for Jenkins to start up before proceeding.
+      shell: "curl -D - --silent https://{{ jenkins.url }}/cli/"
+      register: result
+      until: (result.stdout.find("403 Forbidden") != -1) or (result.stdout.find("200 OK") != -1) and (result.stdout.find("Please wait while") == -1)
+      retries: 5
+      delay: 60
+      changed_when: false
+      tags:
+        - init
+        - restart
+
+    - name: create a new job
+      uri:
+        url: https://{{ jenkins.url }}/createItem?name={{ item.value.name }}
+        method: POST
+        user: "{{ jenkins.user }}"
+        password: "{{ jenkins.password }}"
+        force_basic_auth: yes
+        validate_certs: no
+        body: "{{ lookup('file','{{ item.value.file }}') }}"
+        HEADER_Content-Type: "application/xml"
+        status_code: 200
+      with_dict: "{{jenkins_jobs}}"
+      tags: 
+        - init
+        - jobs
+
+    #- name: delete a job
+    #  uri:
+    #    url: https://{{ jenkins.ip }}:{{ jenkins.port }}/job/{{ item.value.name }}/doDelete
+    #    method: POST
+    #    user: "{{ jenkins.user }}"
+    #    password: "{{ jenkins.password }}"
+    #    force_basic_auth: yes
+    #    validate_certs: no
+    #    body: "{{ lookup('file','{{ item.value.file }}') }}"
+    #    HEADER_Content-Type: "application/xml"
+    #    status_code: 302
+    #  with_dict: "{{jenkins_jobs}}"
+    #  tags: 
+    #    - delete
+
+    #- name: create a pipeline view
+    #  uri:
+    #    url: http://{{ jenkins.ip }}:{{ jenkins.port }}/createView?name={{ jenkins.view }}
+    #    #UPDATE VIEW : /view/{{ jenkins.view }}/view.xml
+    #    method: POST
+    #    user: "{{ jenkins.user }}"
+    #    password: "{{ jenkins.password }}"
+    #    force_basic_auth: yes
+    #    body: "{{ lookup('file','views/view_dashboard.xml') }}"
+    #    HEADER_Content-Type: "application/xml"
+    #    status_code: 200
+    #  tags: 
+    #    - init
+    #    - view

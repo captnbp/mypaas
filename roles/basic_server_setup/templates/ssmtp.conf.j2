@@ -1,0 +1,22 @@
+#
+# /etc/ssmtp.conf -- a config file for sSMTP sendmail.
+#
+# The person who gets all mail for userids < 1000
+# Make this empty to disable rewriting.
+root={{ mail["to"] }}
+# The place where the mail goes. The actual machine name is required
+# no MX records are consulted. Commonly mailhosts are named mail.domain.com
+# The example will fit if you are in domain.com and you mailhub is so named.
+mailhub={{ mail["smtp_host"] }}:{{ mail["smtp_port"] }}
+# Where will the mail seem to come from?
+#rewriteDomain=y
+# The full hostname
+hostname={{ mail["domain"] }}
+
+# Use SSL/TLS before starting negotiation
+#UseTLS=Yes
+UseSTARTTLS=Yes
+
+# Username/Password
+AuthUser={{ mail["user"] }}
+AuthPass={{ mail["pass"] }}

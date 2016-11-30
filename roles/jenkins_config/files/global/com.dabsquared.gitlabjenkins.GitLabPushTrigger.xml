@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<com.dabsquared.gitlabjenkins.GitLabPushTrigger_-DescriptorImpl plugin="gitlab-plugin@1.2.2">
+  <jobsMigrated>true</jobsMigrated>
+  <gitlabHostUrl></gitlabHostUrl>
+  <ignoreCertificateErrors>false</ignoreCertificateErrors>
+</com.dabsquared.gitlabjenkins.GitLabPushTrigger_-DescriptorImpl>

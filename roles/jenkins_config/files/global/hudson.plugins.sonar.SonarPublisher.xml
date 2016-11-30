@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<hudson.plugins.sonar.SonarPublisher_-DescriptorImpl plugin="sonar@2.3">
+  <installations>
+    <hudson.plugins.sonar.SonarInstallation>
+      <name>Sonar</name>
+      <disabled>false</disabled>
+      <serverUrl>http://localhost:9000</serverUrl>
+      <mojoVersion></mojoVersion>
+      <databaseUrl></databaseUrl>
+      <databaseLogin></databaseLogin>
+      <additionalProperties></additionalProperties>
+      <additionalAnalysisProperties></additionalAnalysisProperties>
+      <triggers>
+        <skipScmCause>false</skipScmCause>
+        <skipUpstreamCause>false</skipUpstreamCause>
+        <envVar></envVar>
+      </triggers>
+      <sonarLogin></sonarLogin>
+      <databaseSecret>FZidAVX+Mk64fNQDuEEkRw==</databaseSecret>
+      <sonarSecret>FZidAVX+Mk64fNQDuEEkRw==</sonarSecret>
+    </hudson.plugins.sonar.SonarInstallation>
+  </installations>
+  <buildWrapperEnabled>false</buildWrapperEnabled>
+</hudson.plugins.sonar.SonarPublisher_-DescriptorImpl>
