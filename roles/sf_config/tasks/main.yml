@@ -20,7 +20,7 @@
 
     - name: get private token from gitlab
       uri:
-        url: https://git.{{ tld_hostname }}/api/v3/session?login={{ ldap.users[1].uid }}&password={{ ldap.users[1].password }}
+        url: https://git.{{ tld_hostname }}/api/v3/session?login={{ ldap.users[0].uid }}&password={{ ldap.users[0].password }}
         #url: https://git.{{ tld_hostname }}/api/v3/session?login={% for user in ldap.users %}{{ user.uid.0 }}{% endfor %}&password={% for user in ldap.users %}{{ user.password.0 }}{% endfor %}
         ##{% for user in ldap.users %}
         method: POST
