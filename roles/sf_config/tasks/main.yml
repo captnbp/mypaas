@@ -1,3 +1,7 @@
+    # A helpful reminder of what to look out for post-update.
+    - pause:
+        prompt: "Please login in Gitlab https://git.{{ tld_hostname }} with this login {{ ldap.users[0].uid }} and password {{ ldap.users[0].password }}. This will create the account in Gitlab which will be used for this role. Then continue."
+    
     #- name: test connection to Jenkins server
     #  uri: url=https://git.bplease.eu/api/v3/projects?private_token=EZvWcTAgTBzmZaD41gdq
       #tags:
