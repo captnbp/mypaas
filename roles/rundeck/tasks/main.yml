@@ -1,77 +1,116 @@
-  - name: Create DNS entry
-    ovh_dns: state=present domain={{ tld_hostname }} name=rundeck type=CNAME value={{ admin_vm_name }}.{{ tld_hostname }}.
-    tags: dns
+- name: Create DNS entry
+  ovh_dns: state=present domain={{ tld_hostname }} name=rundeck type=CNAME value={{ admin_vm_name }}.{{ tld_hostname }}.
+  tags: dns
 
-  - name: Create config path
-    file: path="/data/rundeck/etc" state=directory mode=0555
-  - name: Add rundeck Nginx conf file
-    template: src=nginx.conf.j2 dest=/etc/nginx/sites-enabled/rundeck.conf mode=0440
-    notify:
-     - Reload Nginx
+- name: Create config path
+  file: path="/data/rundeck/etc" state=directory mode=0555
 
-  - name: Rundeck - MariaDB
-    docker:
-      name: "{{ rundeck.db.host }}"
-      image: mariadb
-      restart_policy: always
-      volumes:
-        - /data/rundeck/mysql:/var/lib/mysql
-      env:
-        MYSQL_DATABASE: "{{ rundeck.db.name }}"
-        MYSQL_USER: "{{ rundeck.db.user }}"
-        MYSQL_PASSWORD: "{{ rundeck.db.pass }}"
-        MYSQL_ROOT_PASSWORD: "{{ rundeck.db.root_pass }}"
-      net: "{{ env }}-net"
+- name: Add rundeck LDAP conf file
+  template: src=jaas-ldap.conf.j2 dest=/data/rundeck/etc/jaas-ldap.conf mode=0444
 
-  - name: Wait for DB to start
-    pause: seconds=20
+- name: Add rundeck Admin ACL file
+  template: src=admin.aclpolicy.j2 dest=/data/rundeck/etc/admin.aclpolicy mode=0444
 
-  - name: Create monitoring user in MariaDB
-    command: docker exec {{ rundeck.db.host }} mysql -p{{ rundeck.db.root_pass }} -e "CREATE USER '{{ monitoring.db.user }}'@'%' IDENTIFIED BY '{{ monitoring.db.pass }}';"
-    ignore_errors: yes
-  - name: Create roles for moonitoring processes in MariaDB
-    command: docker exec {{ rundeck.db.host }} mysql -p{{ rundeck.db.root_pass }} -e "GRANT PROCESS ON *.* TO '{{ monitoring.db.user }}'@'%';"
-  - name: Create roles for monitoring perfs in MariaDB
-    command: docker exec {{ rundeck.db.host }} mysql -p{{ rundeck.db.root_pass }} -e "GRANT SELECT ON performance_schema.* TO '{{ monitoring.db.user }}'@'%';"
+- name: Add rundeck user ACL policy
+  template: src=users.aclpolicy.j2 dest=/data/rundeck/etc/users.aclpolicy mode=0444
 
-  - name: Rundeck
-    docker:
-      name: rundeck
-      image: "{{ rundeck.docker_image }}"
-      restart_policy: always
-      net: "{{ env }}-net"
-      env:
-        MYHOST: "rundeck.{{ tld_hostname }}"
-        RDPASS: "{{ rundeck.pass }}"
-        MAILFROM: "{{ mail.to }}"
-        MYSQL_HOST: "{{ rundeck.db.host }}"
-        MYSQL_DB: "{{ rundeck.db.name }}"
-        MYSQL_USER: "{{ rundeck.db.user }}"
-        MYSQL_PASS: "{{ rundeck.db.pass }}"
-        SECRET: "{{ rundeck.secret }}"
-      volumes:
-        - /data/rundeck/data:/var/lib/rundeck/data
-        - /data/rundeck/var:/var/lib/rundeck/var
-        - /data/rundeck/logs:/var/lib/rundeck/logs
-        - /data/rundeck/projects:/var/rundeck/projects
-        - /data/rundeck/log:/var/log/rundeck
-        - /data/rundeck/.ssh:/var/lib/rundeck/.ssh
+- name: Add rundeck default tokens
+  template: src=tokens.properties.j2 dest=/data/rundeck/etc/tokens.properties mode=0444
 
-  - name: Create backup folder
-    file: path={{ backup.path }}/{{ env }}/rundeck state=directory mode=700
-  - name: Cron backup Rundeck {{ env }}
-    cron: 
-      name: Cron backup Rundeck {{ env }}
-      minute: "16"
-      hour: "3"
-      job: dogwrap -n "Cron backup Rundeck data" -k {{ datadog.api_key }} --submit_mode errors  \"tar zcf {{ backup.path }}/{{ env }}/rundeck-$(date \'+%Y%m%d\').tar.gz /data/rundeck\" 2>&1
-    when: backup
+#- name: Add rundeck default user
+#  template: src=realm.properties.j2 dest=/data/rundeck/etc/realm.properties mode=0444
 
-  - name: Cron backup Rundeck DB
-    cron:
-      name: Cron backup Rundeck DB
-      minute: "0"
-      hour: "3"
-      job: dogwrap -n "Cron backup Rundeck DB" -k {{ datadog.api_key }} --submit_mode errors  "docker exec {{ rundeck.db.host }} mysqldump --all-databases -u root -p{{ rundeck.db.root_pass }}| gzip > {{ backup.path }}/{{ env }}/rundeck-dump-$(date +%Y%m%d%H%M).gz" 2>&1
-    when: backup
+- name: Add rundeck default framework settings
+  template: src=framework.properties.j2 dest=/data/rundeck/etc/framework.properties mode=0444
+
+- name: Add rundeck Nginx conf file
+  template: src=nginx.conf.j2 dest=/etc/nginx/sites-enabled/rundeck.conf mode=0440
+  notify:
+   - Reload Nginx
+
+- name: config_rundeck | generate user password hashes for PropertyFileLoginModule
+  shell: "echo -n {{ rundeck.admin.pass }} | md5sum | cut -d' ' -f1"
+  register: rundeck_adminhash
+  changed_when: false
+
+#- name: config_rundeck | add users to realm.properties
+#  lineinfile:
+#    dest: "/data/rundeck/etc/realm.properties"
+#    regexp: "^admin"
+#    line: "admin: MD5:{{ rundeck_adminhash.stdout }},admin"
+#    state: present
+#  when: rundeck_adminhash|success
+
+- name: Rundeck - MariaDB
+  docker:
+    name: "{{ rundeck.db.host }}"
+    image: mariadb
+    restart_policy: always
+    volumes:
+      - /data/rundeck/mysql:/var/lib/mysql
+    env:
+      MYSQL_DATABASE: "{{ rundeck.db.name }}"
+      MYSQL_USER: "{{ rundeck.db.user }}"
+      MYSQL_PASSWORD: "{{ rundeck.db.pass }}"
+      MYSQL_ROOT_PASSWORD: "{{ rundeck.db.root_pass }}"
+    net: "{{ env }}-net"
+
+- name: Wait for DB to start
+  pause: seconds=20
+
+- name: Create monitoring user in MariaDB
+  command: docker exec {{ rundeck.db.host }} mysql -p{{ rundeck.db.root_pass }} -e "CREATE USER '{{ monitoring.db.user }}'@'%' IDENTIFIED BY '{{ monitoring.db.pass }}';"
+  ignore_errors: yes
+- name: Create roles for moonitoring processes in MariaDB
+  command: docker exec {{ rundeck.db.host }} mysql -p{{ rundeck.db.root_pass }} -e "GRANT PROCESS ON *.* TO '{{ monitoring.db.user }}'@'%';"
+- name: Create roles for monitoring perfs in MariaDB
+  command: docker exec {{ rundeck.db.host }} mysql -p{{ rundeck.db.root_pass }} -e "GRANT SELECT ON performance_schema.* TO '{{ monitoring.db.user }}'@'%';"
+
+- name: Rundeck
+  docker:
+    name: rundeck
+    image: "{{ rundeck.docker_image }}"
+    restart_policy: always
+    net: "{{ env }}-net"
+    env:
+      MYHOST: "rundeck.{{ tld_hostname }}"
+      RDPASS: "MD5:{{ rundeck_adminhash.stdout }}"
+      MAILFROM: "{{ mail.to }}"
+      MYSQL_HOST: "{{ rundeck.db.host }}"
+      MYSQL_DB: "{{ rundeck.db.name }}"
+      MYSQL_USER: "{{ rundeck.db.user }}"
+      MYSQL_PASS: "{{ rundeck.db.pass }}"
+      SECRET: "{{ rundeck.secret }}"
+      LDAP_CONFIG_PATH: "/etc/rundeck/jaas-ldap.conf"
+    volumes:
+      - /data/rundeck/data:/var/lib/rundeck/data
+      - /data/rundeck/var:/var/lib/rundeck/var
+      - /data/rundeck/logs:/var/lib/rundeck/logs
+      - /data/rundeck/projects:/var/rundeck/projects
+      - /data/rundeck/log:/var/log/rundeck
+      - /data/rundeck/.ssh:/var/lib/rundeck/.ssh
+      - /data/rundeck/etc/jaas-ldap.conf:/etc/rundeck/jaas-ldap.conf
+      - /data/rundeck/etc/admin.aclpolicy:/etc/rundeck/admin.aclpolicy
+      - /data/rundeck/etc/users.aclpolicy:/etc/rundeck/users.aclpolicy
+      - /data/rundeck/etc/framework.properties:/etc/rundeck/framework.properties
+      - /data/rundeck/etc/tokens.properties:/etc/rundeck/tokens.properties
+#      - /data/rundeck/etc/realm.properties:/etc/rundeck/realm.properties
+
+- name: Create backup folder
+  file: path={{ backup.path }}/{{ env }}/rundeck state=directory mode=700
+- name: Cron backup Rundeck {{ env }}
+  cron: 
+    name: Cron backup Rundeck {{ env }}
+    minute: "16"
+    hour: "3"
+    job: dogwrap -n "Cron backup Rundeck data" -k {{ datadog.api_key }} --submit_mode errors  \"tar zcf {{ backup.path }}/{{ env }}/rundeck-$(date \'+%Y%m%d\').tar.gz /data/rundeck\" 2>&1
+  when: backup
+
+- name: Cron backup Rundeck DB
+  cron:
+    name: Cron backup Rundeck DB
+    minute: "0"
+    hour: "3"
+    job: dogwrap -n "Cron backup Rundeck DB" -k {{ datadog.api_key }} --submit_mode errors  "docker exec {{ rundeck.db.host }} mysqldump --all-databases -u root -p{{ rundeck.db.root_pass }}| gzip > {{ backup.path }}/{{ env }}/rundeck-dump-$(date +%Y%m%d%H%M).gz" 2>&1
+  when: backup
 

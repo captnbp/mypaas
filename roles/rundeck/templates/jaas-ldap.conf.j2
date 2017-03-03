@@ -1,22 +1,29 @@
 ldap {
-    com.dtolabs.rundeck.jetty.jaas.JettyCachingLdapLoginModule required
+    com.dtolabs.rundeck.jetty.jaas.JettyCachingLdapLoginModule sufficient
       debug="true"
       contextFactory="com.sun.jndi.ldap.LdapCtxFactory"
-      providerUrl="{{ auth['ldap_url'] }}"
-      bindDn="cn=Manager,{{ auth['base_dn'] }}"
-      bindPassword="secrent"
+      providerUrl="ldap://{{ ldap.ip }}:{{ ldap.port }}"
+      bindDn="{{ ldap.bind_dn }}"
+      bindPassword="{{ ldap.pass }}"
       authenticationMethod="simple"
-      forceBindingLogin="false"
-      userBaseDn="ou=users,{{ auth['base_dn'] }}"
-      userRdnAttribute="uid"
+      forceBindingLogin="true"
+      userBaseDn="{{ ldap.base_users_dn }}"
+      userRdnAttribute="cn"
       userIdAttribute="uid"
       userPasswordAttribute="userPassword"
-      userObjectClass="account"
-      roleBaseDn="ou=Groups,{{ auth['base_dn'] }}"
+      userObjectClass="posixAccount"
+      roleBaseDn="{{ ldap.base_groups_dn }}"
       roleNameAttribute="cn"
-      roleUsernameMemberAttribute="memberUid"
-      roleMemberAttribute="memberUid"
-      roleObjectClass="posixGroup"
+      roleMemberAttribute="member"
+      roleObjectClass="groupOfNames"
       cacheDurationMillis="300000"
-      reportStatistics="true";
+      reportStatistics="true"
+      supplementalRoles="user"
+      roleSearchSubtree=true
+      forceBindingLoginUseRootContextForRoles="true";
+
+   org.eclipse.jetty.jaas.spi.PropertyFileLoginModule required
+      debug="true"
+      file="/etc/rundeck/realm.properties";
 };
+
