@@ -7,14 +7,14 @@
           state=present
           shell=/bin/bash
 
-  - authorized_key: user="{{ newuser }}"
-                    key="{{ item }}"
-    with_file:
-      - public_keys/benoit-xps
-      - public_keys/benoit-desktop
-      - public_keys/benoit-server
-      - public_keys/d2si
-      - public_keys/jfouqueray
+#  - authorized_key: user="{{ newuser }}"
+#                    key="{{ item }}"
+#    with_file:
+#      - public_keys/benoit-xps
+#      - public_keys/benoit-desktop
+#      - public_keys/benoit-server
+#      - public_keys/d2si
+#      - public_keys/jfouqueray
  
   - name: Make sure we can sudo
     template: src=newuser_sudoer dest=/etc/sudoers.d/{{ newuser }}_sudoer mode=0440

@@ -1,0 +1,6 @@
+*.swp
+deploy.retry
+main.retry
+vars-os-users.yml
+vars.yml
+ansible_hosts
