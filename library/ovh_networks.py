@@ -98,7 +98,8 @@ def main():
     try:
         vlan = client.post('/cloud/project/{}/network/private'.format(project_id),
          name=vlan_name,
-         vlanId=vlan_id2
+         vlanId=vlan_id2,
+         regions=region
         )
         ###### get vlan and create subnet
         try:
@@ -110,11 +111,11 @@ def main():
                     try:
                         post_subnet = client.post('/cloud/project/{}/network/private/{}/subnet'.format(project_id,vlan_ref),
                          dhcp=True,
-                         end=None,
-                         network=None,
+                         end=end_ip,
+                         network=cidr,
                          noGateway=True,
-                         region=None,
-                         start=None,
+                         region=region,
+                         start=start_ip,
                         )
                         module.exit_json(changed=True, output=post_subnet)
                     except Exception as ex:
