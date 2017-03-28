@@ -61,20 +61,20 @@
     remote_ip_prefix: 0.0.0.0/0
 
 - name: Create Security group for prd
-  os_security_group: state=present name={{ prd.security_group }} description="PRD firewall rules" cloud={{ cloud.name }}
+  os_security_group: state=present name={{ prod.security_group }} description="PRD firewall rules" cloud={{ cloud.name }}
 
 - os_security_group_rule:
     cloud: "{{ cloud.name }}"
-    security_group: "{{ prd.security_group }}"
+    security_group: "{{ prod.security_group }}"
     protocol: tcp
     port_range_min: "{{ item }}"
     port_range_max: "{{ item }}"
     remote_ip_prefix: 0.0.0.0/0
-  with_items: "{{ prd.tcp }}"
+  with_items: "{{ prod.tcp }}"
 
 - os_security_group_rule:
     cloud: "{{ cloud.name }}"
-    security_group: "{{ prd.security_group }}"
+    security_group: "{{ prod.security_group }}"
     protocol: icmp
     remote_ip_prefix: 0.0.0.0/0
 
@@ -89,6 +89,7 @@
     flavor: "{{ admin.flavor }}"
     security_groups: "{{ admin.security_group }}"
     nics: "{{ admin.nics }}"
+    #network: "Ext-Net"
     auto_ip: yes
     wait: yes
     userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install shade docker-py \n echo '127.0.0.1 admin-vm' >> /etc/hosts \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start \n sleep 5 \n sudo docker network create -d bridge admin-net" 
@@ -98,18 +99,18 @@
 - debug: var=adminvm
 
 - name: Add created instance to Inventory
-  add_host: name={{ adminvm.openstack.interface_ip }} groups=softwarefactory ansible_ssh_host={{ adminvm.openstack.interface_ip }} ansible_become=true
+  add_host: name={{ adminvm.openstack.public_v4 }} groups=softwarefactory ansible_ssh_host={{ adminvm.openstack.public_v4 }} ansible_become=true
 
 - name: Create DNS entry
-  ovh_dns: state=present domain={{ tld_hostname }} name=admin-vm type=A value={{ adminvm.openstack.interface_ip }}
+  ovh_dns: state=present domain={{ tld_hostname }} name=admin-vm type=A value={{ adminvm.openstack.public_v4 }}
   tags: dns
 
 - name: Create DNS entry
-  ovh_dns: state=present domain={{ tld_hostname }} name=admin type=A value={{ adminvm.openstack.interface_ip }}
+  ovh_dns: state=present domain={{ tld_hostname }} name=admin type=A value={{ adminvm.openstack.public_v4 }}
   tags: dns
 
 - name: Create DNS entry
-  ovh_dns: state=present domain={{ tld_hostname }} name=* type=A value={{ adminvm.openstack.interface_ip }}
+  ovh_dns: state=present domain={{ tld_hostname }} name=* type=A value={{ adminvm.openstack.public_v4 }}
   tags: dns
 
 
@@ -130,13 +131,17 @@
   register: devswarmmastervm
 
 - name: Add created instance to Inventory
-  add_host: name={{ devswarmmastervm.openstack.interface_ip }} groups=docker_swarm_manager ansible_ssh_host={{ devswarmmastervm.openstack.interface_ip }} ansible_become=true
+  add_host: name={{ devswarmmastervm.openstack.public_v4 }} groups=docker_swarm_manager ansible_ssh_host={{ devswarmmastervm.openstack.public_v4 }} ansible_become=true
 
 - name: Add created instance to Inventory
-  add_host: name={{ devswarmmastervm.openstack.interface_ip }} groups=swarm-cluster ansible_ssh_host={{ devswarmmastervm.openstack.interface_ip }} ansible_become=true
+  add_host: name={{ devswarmmastervm.openstack.public_v4 }} groups=swarm-cluster ansible_ssh_host={{ devswarmmastervm.openstack.public_v4 }} ansible_become=true
 
 - name: Create DNS entry
-  ovh_dns: state=present domain={{ tld_hostname }} name=swarm-master type=A value={{ devswarmmastervm.openstack.interface_ip }}
+  ovh_dns: state=present domain={{ tld_hostname }} name=dev-swarm-master type=A value={{ devswarmmastervm.openstack.public_v4 }}
+  tags: dns
+
+- name: Create AAAA DNS entry
+  ovh_dns: state=present domain={{ tld_hostname }} name=dev-swarm-master type=AAAA value={{ devswarmmastervm.openstack.public_v6 }}
   tags: dns
 
 - name: Create Docker Swarm Node
@@ -156,13 +161,17 @@
   register: devswarmnodevm
 
 - name: Add created instance to Inventory
-  add_host: name={{ devswarmnodevm.openstack.interface_ip }} groups=docker_swarm_manager ansible_ssh_host={{ devswarmnodevm.openstack.interface_ip }} ansible_become=true
+  add_host: name={{ devswarmnodevm.openstack.public_v4 }} groups=docker_swarm_manager ansible_ssh_host={{ devswarmnodevm.openstack.public_v4 }} ansible_become=true
 
 - name: Add created instance to Inventory
-  add_host: name={{ devswarmnodevm.openstack.interface_ip }} groups=swarm-cluster ansible_ssh_host={{ devswarmnodevm.openstack.interface_ip }} ansible_become=true
+  add_host: name={{ devswarmnodevm.openstack.public_v4 }} groups=swarm-cluster ansible_ssh_host={{ devswarmnodevm.openstack.public_v4 }} ansible_become=true
 
 - name: Create DNS entry
-  ovh_dns: state=present domain={{ tld_hostname }} name=swarm-node-1 type=A value={{ devswarmnodevm.openstack.interface_ip }}
+  ovh_dns: state=present domain={{ tld_hostname }} name=dev-swarm-node-1 type=A value={{ devswarmnodevm.openstack.public_v4 }}
+  tags: dns
+
+- name: Create AAAA DNS entry
+  ovh_dns: state=present domain={{ tld_hostname }} name=dev-swarm-node-1 type=AAAA value={{ devswarmnodevm.openstack.public_v6 }}
   tags: dns
 
 - name: Create Docker Swarm Manager
@@ -182,13 +191,17 @@
   register: prodswarmmastervm
 
 - name: Add created instance to Inventory
-  add_host: name={{ prodswarmmastervm.openstack.interface_ip }} groups=docker_swarm_manager ansible_ssh_host={{ prodswarmmastervm.openstack.interface_ip }} ansible_become=true
+  add_host: name={{ prodswarmmastervm.openstack.public_v4 }} groups=docker_swarm_manager ansible_ssh_host={{ prodswarmmastervm.openstack.public_v4 }} ansible_become=true
 
 - name: Add created instance to Inventory
-  add_host: name={{ prodswarmmastervm.openstack.interface_ip }} groups=swarm-cluster ansible_ssh_host={{ prodswarmmastervm.openstack.interface_ip }} ansible_become=true
+  add_host: name={{ prodswarmmastervm.openstack.public_v4 }} groups=swarm-cluster ansible_ssh_host={{ prodswarmmastervm.openstack.public_v4 }} ansible_become=true
 
 - name: Create DNS entry
-  ovh_dns: state=present domain={{ tld_hostname }} name=swarm-master type=A value={{ prodswarmmastervm.openstack.interface_ip }}
+  ovh_dns: state=present domain={{ tld_hostname }} name=prod-swarm-master type=A value={{ prodswarmmastervm.openstack.public_v4 }}
+  tags: dns
+
+- name: Create AAAA DNS entry
+  ovh_dns: state=present domain={{ tld_hostname }} name=prod-swarm-master type=AAAA value={{ prodswarmmastervm.openstack.public_v6 }}
   tags: dns
 
 - name: Create Docker Swarm Node
@@ -205,16 +218,20 @@
     auto_ip: yes
     wait: yes
     userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 prod-swarm-node-1' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start" 
-  register: prodswarmnoprodm
+  register: prodswarmnodevm
 
 - name: Add created instance to Inventory
-  add_host: name={{ prodswarmnoprodm.openstack.interface_ip }} groups=docker_swarm_manager ansible_ssh_host={{ prodswarmnoprodm.openstack.interface_ip }} ansible_become=true
+  add_host: name={{ prodswarmnodevm.openstack.public_v4 }} groups=docker_swarm_manager ansible_ssh_host={{ prodswarmnodevm.openstack.public_v4 }} ansible_become=true
 
 - name: Add created instance to Inventory
-  add_host: name={{ prodswarmnoprodm.openstack.interface_ip }} groups=swarm-cluster ansible_ssh_host={{ prodswarmnoprodm.openstack.interface_ip }} ansible_become=true
+  add_host: name={{ prodswarmnodevm.openstack.public_v4 }} groups=swarm-cluster ansible_ssh_host={{ prodswarmnodevm.openstack.public_v4 }} ansible_become=true
 
 - name: Create DNS entry
-  ovh_dns: state=present domain={{ tld_hostname }} name=swarm-node-1 type=A value={{ prodswarmnoprodm.openstack.interface_ip }}
+  ovh_dns: state=present domain={{ tld_hostname }} name=prod-swarm-node-1 type=A value={{ prodswarmnodevm.openstack.public_v4 }}
+  tags: dns
+
+- name: Create AAAA DNS entry
+  ovh_dns: state=present domain={{ tld_hostname }} name=prod-swarm-node-1 type=AAAA value={{ prodswarmnodevm.openstack.public_v6 }}
   tags: dns
 
 - name: Wait for VM to start and install first requirements

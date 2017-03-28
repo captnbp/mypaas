@@ -216,7 +216,7 @@ vlans:
     
 admin:
   name: admin-vm
-  flavor: b2-15
+  flavor: sp-30-ssd
   os: "Ubuntu 16.04"
   key: mypaas
   security_group: admin
@@ -235,7 +235,7 @@ admin:
 
 dev:
   security_group: dev
-  flavor: s1-8
+  flavor: sp-30-ssd
   os: "Ubuntu 16.04"
   key: mypaas
   nics:
@@ -247,10 +247,11 @@ dev:
     - 443
   udp:
 
-prd:
+prod:
   security_group: prd
-  flavor: b2-7
+  flavor: sp-30-ssd
   os: "Ubuntu 16.04"
+  key: mypaas
   nics:
     - Ext-Net
     - prodvlan

@@ -1,6 +1,8 @@
 [softwarefactory]
-{{ adminvm.openstack.interface_ip }} become=true
+{{ adminvm.openstack.public_v4 }} become=true
 
 [docker_swarm_manager]
-{{ swarmmastervm.openstack.interface_ip }} become=true
-{{ swarmnodevm.openstack.interface_ip }} become=true
+{{ devswarmmastervm.openstack.public_v4 }} become=true
+{{ devswarmnodevm.openstack.public_v4 }} become=true
+{{ prodswarmmastervm.openstack.public_v4 }} become=true
+{{ prodswarmnodevm.openstack.public_v4 }} become=true

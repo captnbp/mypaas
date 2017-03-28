@@ -43,15 +43,15 @@
     OVH_APPLICATION_SECRET: "{{ ovh.application_secret }}"
     OVH_CONSUMER_KEY: "{{ ovh.consumer_key }}"
 
-- hosts: swarm-cluster
-  tags: swarm-cluster
+- hosts: docker_swarm_manager
+  tags: docker_swarm_manager
   remote_user: ubuntu
   become: true
   roles:
     - { role: basic_server_setup, tags: ['base'] }
     - { role: fail2ban, tags: ['fail2ban'] }
     - { role: docker, tags: ['docker'] }
-    - { role: docker_cluster, tags: ['docker_cluster'] }
+#    - { role: docker_cluster, tags: ['docker_cluster'] }
   vars_files:
     - vars.yml
 
