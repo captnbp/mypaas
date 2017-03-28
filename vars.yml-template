@@ -204,6 +204,7 @@ vlans:
     
 admin:
   name: admin-vm
+  flavor: b2-15
   os: "Ubuntu 16.04"
   key: mypaas
   flavor: vps-ssd-3
@@ -223,6 +224,8 @@ admin:
 
 dev:
   security_group: dev
+  flavor: b2-7
+  os: "Ubuntu 16.04"
   nics:
     - Ext-Net
     - devvlan
@@ -234,6 +237,8 @@ dev:
 
 prd:
   security_group: prd
+  flavor: b2-7
+  os: "Ubuntu 16.04"
   nics:
     - Ext-Net
     - prdvlan
