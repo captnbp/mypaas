@@ -114,3 +114,13 @@
     job: dogwrap -n "Cron backup Rundeck DB" -k {{ datadog.api_key }} --submit_mode errors  "docker exec {{ rundeck.db.host }} mysqldump --all-databases -u root -p{{ rundeck.db.root_pass }}| gzip > {{ backup.path }}/{{ env }}/rundeck-dump-$(date +%Y%m%d%H%M).gz" 2>&1
   when: backup
 
+- name: Create Rundeck project
+  uri:
+    url: "https://rundeck.{{ tld_hostname }}/api/11/projects?authtoken=Q5hpGwxUrwva3HIYflnrbqgz3ckLRPvK"
+    method: POST
+    #status_code: 201
+    body_format: json
+    #headers:
+    #  X-Rundeck-Auth-Token: "{{ rundeck.admin.token }}"
+    body: '{ "name": "mypaas" }'
+    tag: create_rundeck_project

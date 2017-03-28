@@ -1,17 +1,17 @@
 newuser: ubuntu
-local_user: ""
+local_user: "TODO"
 admin_vm_name: admin-vm
-tld_hostname: ""
+tld_hostname: "TODO"
 timezone: "Europe/Paris"
 env: admin
 admin_mail: "admin@{{ tld_hostname }}"
-top_dn: 'dc=XXX,dc=XXX'
+top_dn: 'dc=TODO,dc=TODO'
 
 mail:
   domain: "{{ tld_hostname }}"
   to: "admin@{{ tld_hostname }}"
   user: "noreply@{{ tld_hostname }}"
-  pass: ""
+  pass: "TODO"
   smtp_host: ssl0.ovh.net
   smtp_port: 587
 
@@ -28,14 +28,14 @@ fail2ban:
 monitoring:
   db:
     user: monitoring
-    pass: ""
+    pass: "PASSWORD"
 datadog:
-  api_key: ""
-  app_key: ""
+  api_key: "TODO"
+  app_key: "TODO"
   tags: admin
   pgdb: 
     user: ddagent
-    pass: ""
+    pass: "PASSWORD"
   notifiers:
     - slack-mypaas
 
@@ -43,17 +43,17 @@ rundeck:
   ip: rundeck
   port: 4440
   docker_image: captnbp/docker-rundeck
-  secret: ""
+  secret: "PASSWORD"
   admin:
-    token: ""
-    pass: ""
+    token: "PASSWORD"
+    pass: "PASSWORD"
   db:
     host: rundeck-mariadb
     name: rundeck
     user: rundeck
-    pass: ""
+    pass: "PASSWORD"
     port: 5432
-    root_pass: ""
+    root_pass: "PASSWORD"
 
 jenkins:
   docker_image: jenkins
@@ -101,7 +101,7 @@ key_body_push:
 
 slack:
   team_domain: YOURCOMPANY
-  token: ""
+  token: "TODO"
 
 gitlab:
   version: latest
@@ -110,14 +110,14 @@ gitlab:
   port: 80
   db:
     user: gitlab
-    pass: ""
+    pass: "PASSWORD"
     name: gitlabhq_production
     host: gitlab-postgres
-    postgres_pass: ""
-  secret_db_key_base: ""
-  secret_key_base: ""
-  secret_otp_key_base: ""
-  root_pass: ""
+    postgres_pass: "PASSWORD"
+  secret_db_key_base: "PASSWORD"
+  secret_key_base: "PASSWORD"
+  secret_otp_key_base: "PASSWORD"
+  root_pass: "PASSWORD"
 
 ldap:
   organization: MY COMPANY
@@ -127,7 +127,7 @@ ldap:
   base_users_dn: 'ou=users,{{ top_dn }}'
   base_groups_dn: 'ou=groups,{{ top_dn }}'
   bind_dn: 'cn=admin,{{ top_dn }}'
-  pass: ""
+  pass: "PASSWORD"
   phpldapadmin_port: 80
   phpldapadmin_ip: phpldapadmin
   ip: ldap
@@ -137,14 +137,14 @@ ldap:
    - sn: Peter
      givenName: Saluthugues
      uid: peter
-     password: ""
+     password: "PASSWORD"
      uidNumber: 1001
      gidNumber: 500
      mail: peter.saluthugues@mypaas
    - sn: Steven
      givenName: Huguessalut
      uid: steven
-     password: ""
+     password: "PASSWORD"
      uidNumber: 1002
      gidNumber: 500
      mail: steven.huguessalut@mypaas
@@ -162,15 +162,15 @@ owncloud:
   docker_image: captnbp/docker-owncloud
   db:
     user: owncloud
-    pass: ""
+    pass: "PASSWORD"
     host: owncloud-mariadb
     port: 3306
     name: owncloud
     table_prefix: "sd56bh4XXXXXXXXX"
-    root_pass: ""
+    root_pass: "PASSWORD"
   admin:
     user: admin
-    pass: ""
+    pass: "PASSWORD"
   ip: owncloud
   port: 80
 
@@ -178,7 +178,7 @@ odoo:
   db:
     name: odoo
     user: odoo
-    pass: ""
+    pass: "PASSWORD"
     port: 5432
     host: odoo-postgres
   ip: odoo
@@ -256,25 +256,25 @@ cluster:
     - 8.8.4.4
 
 ovh:
-  application_key: ""
-  application_secret: ""
+  application_key: "TODO"
+  application_secret: "TODO"
   endpoint: ovh-eu
-  consumer_key: ""
+  consumer_key: "TODO"
 
 registry:
   docker_image: registry:latest
   ip: registry
   port: 5000
   user: admin
-  pass: ""
-  htpasswd_pass: ""
+  pass: "PASSWORD"
+  htpasswd_pass: "TODO"
   os:
     region: GRA1
     container: docker_registry
 
 backup:
   path: /data/backup
-  encrypting_passphrase: ""
+  encrypting_passphrase: "PASSWORD"
   os:
     region: GRA1
     container: backup

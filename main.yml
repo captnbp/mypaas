@@ -3,6 +3,7 @@
   tags: ovh
   roles:
     - { role: ovh_project, tags: ['ovh', 'ovh_project'] }
+    - { role: ovh_vrack, tags: ['ovh', 'ovh_vrack'] }
   vars_files:
     - vars.yml
   environment:
