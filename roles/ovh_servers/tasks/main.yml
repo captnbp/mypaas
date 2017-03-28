@@ -10,6 +10,10 @@
     name: "{{ admin.key }}"
     public_key_file: "{{ cloud.sshkey.public_key_file }}"
 
+- name: Create Vlans
+  ovh_networks: description="{{ cloud.project }}" project_name="{{ cloud.project }}" name="{{ item.name }}" id="{{ item.id }}" state=present
+  with_items: "{{ vlans }}"
+  
 - name: Create Security group for admin VM
   os_security_group: state=present name={{ admin.security_group }} description="Admin firewall rules" cloud={{ cloud.name }}
 
@@ -37,7 +41,6 @@
     security_group: "{{ admin.security_group }}"
     protocol: icmp
     remote_ip_prefix: 0.0.0.0/0
-
 
 - name: Create Security group for dev
   os_security_group: state=present name={{ dev.security_group }} description="DEV firewall rules" cloud={{ cloud.name }}
@@ -85,7 +88,7 @@
     key_name: "{{ admin.key }}"
     flavor: "{{ admin.flavor }}"
     security_groups: "{{ admin.security_group }}"
-    network: "{{ cluster.ext_network }}"
+    nics: "{{ admin.nics }}"
     auto_ip: yes
     wait: yes
     userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install shade docker-py \n echo '127.0.0.1 admin-vm' >> /etc/hosts \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start \n sleep 5 \n sudo docker network create -d bridge admin-net" 
@@ -114,52 +117,104 @@
   os_server:
     cloud: "{{ cloud.name }}"
     state: present
-    name: swarm-master
+    name: dev-swarm-master
     region_name: "{{ openrc.openrc.region_name }}"
-    image: "{{ cluster.os }}"
-    key_name: "{{ cluster.key }}"
-    flavor: "{{ cluster.flavor }}"
+    image: "{{ dev.os }}"
+    key_name: "{{ dev.key }}"
+    flavor: "{{ dev.flavor }}"
     security_groups: "{{ dev.security_group }}"
-    network: "{{ cluster.ext_network }}"
+    nics: "{{ dev.nics }}"
     auto_ip: yes
     wait: yes
-    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 swarm-master' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start" 
-  register: swarmmastervm
+    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 dev-swarm-master' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start" 
+  register: devswarmmastervm
 
 - name: Add created instance to Inventory
-  add_host: name={{ swarmmastervm.openstack.interface_ip }} groups=docker_swarm_manager ansible_ssh_host={{ swarmmastervm.openstack.interface_ip }} ansible_become=true
+  add_host: name={{ devswarmmastervm.openstack.interface_ip }} groups=docker_swarm_manager ansible_ssh_host={{ devswarmmastervm.openstack.interface_ip }} ansible_become=true
 
 - name: Add created instance to Inventory
-  add_host: name={{ swarmmastervm.openstack.interface_ip }} groups=swarm-cluster ansible_ssh_host={{ swarmmastervm.openstack.interface_ip }} ansible_become=true
+  add_host: name={{ devswarmmastervm.openstack.interface_ip }} groups=swarm-cluster ansible_ssh_host={{ devswarmmastervm.openstack.interface_ip }} ansible_become=true
 
 - name: Create DNS entry
-  ovh_dns: state=present domain={{ tld_hostname }} name=swarm-master type=A value={{ swarmmastervm.openstack.interface_ip }}
+  ovh_dns: state=present domain={{ tld_hostname }} name=swarm-master type=A value={{ devswarmmastervm.openstack.interface_ip }}
   tags: dns
 
 - name: Create Docker Swarm Node
   os_server:
     cloud: "{{ cloud.name }}"
     state: present
-    name: swarm-node-1
+    name: dev-swarm-node-1
     region_name: "{{ openrc.openrc.region_name }}"
-    image: "{{ cluster.os }}"
-    key_name: "{{ cluster.key }}"
-    flavor: "{{ cluster.flavor }}"
+    image: "{{ dev.os }}"
+    key_name: "{{ dev.key }}"
+    flavor: "{{ dev.flavor }}"
     security_groups: "{{ dev.security_group }}"
-    network: "{{ cluster.ext_network }}"
+    nics: "{{ dev.nics }}"
     auto_ip: yes
     wait: yes
-    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 swarm-node-1' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start" 
-  register: swarmnodevm
+    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 dev-swarm-node-1' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start" 
+  register: devswarmnodevm
 
 - name: Add created instance to Inventory
-  add_host: name={{ swarmnodevm.openstack.interface_ip }} groups=docker_swarm_manager ansible_ssh_host={{ swarmnodevm.openstack.interface_ip }} ansible_become=true
+  add_host: name={{ devswarmnodevm.openstack.interface_ip }} groups=docker_swarm_manager ansible_ssh_host={{ devswarmnodevm.openstack.interface_ip }} ansible_become=true
 
 - name: Add created instance to Inventory
-  add_host: name={{ swarmnodevm.openstack.interface_ip }} groups=swarm-cluster ansible_ssh_host={{ swarmnodevm.openstack.interface_ip }} ansible_become=true
+  add_host: name={{ devswarmnodevm.openstack.interface_ip }} groups=swarm-cluster ansible_ssh_host={{ devswarmnodevm.openstack.interface_ip }} ansible_become=true
 
 - name: Create DNS entry
-  ovh_dns: state=present domain={{ tld_hostname }} name=swarm-node-1 type=A value={{ swarmnodevm.openstack.interface_ip }}
+  ovh_dns: state=present domain={{ tld_hostname }} name=swarm-node-1 type=A value={{ devswarmnodevm.openstack.interface_ip }}
+  tags: dns
+
+- name: Create Docker Swarm Manager
+  os_server:
+    cloud: "{{ cloud.name }}"
+    state: present
+    name: prod-swarm-master
+    region_name: "{{ openrc.openrc.region_name }}"
+    image: "{{ prod.os }}"
+    key_name: "{{ prod.key }}"
+    flavor: "{{ prod.flavor }}"
+    security_groups: "{{ prod.security_group }}"
+    nics: "{{ prod.nics }}"
+    auto_ip: yes
+    wait: yes
+    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 prod-swarm-master' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start" 
+  register: prodswarmmastervm
+
+- name: Add created instance to Inventory
+  add_host: name={{ prodswarmmastervm.openstack.interface_ip }} groups=docker_swarm_manager ansible_ssh_host={{ prodswarmmastervm.openstack.interface_ip }} ansible_become=true
+
+- name: Add created instance to Inventory
+  add_host: name={{ prodswarmmastervm.openstack.interface_ip }} groups=swarm-cluster ansible_ssh_host={{ prodswarmmastervm.openstack.interface_ip }} ansible_become=true
+
+- name: Create DNS entry
+  ovh_dns: state=present domain={{ tld_hostname }} name=swarm-master type=A value={{ prodswarmmastervm.openstack.interface_ip }}
+  tags: dns
+
+- name: Create Docker Swarm Node
+  os_server:
+    cloud: "{{ cloud.name }}"
+    state: present
+    name: prod-swarm-node-1
+    region_name: "{{ openrc.openrc.region_name }}"
+    image: "{{ prod.os }}"
+    key_name: "{{ prod.key }}"
+    flavor: "{{ prod.flavor }}"
+    security_groups: "{{ prod.security_group }}"
+    nics: "{{ prod.nics }}"
+    auto_ip: yes
+    wait: yes
+    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 prod-swarm-node-1' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start" 
+  register: prodswarmnoprodm
+
+- name: Add created instance to Inventory
+  add_host: name={{ prodswarmnoprodm.openstack.interface_ip }} groups=docker_swarm_manager ansible_ssh_host={{ prodswarmnoprodm.openstack.interface_ip }} ansible_become=true
+
+- name: Add created instance to Inventory
+  add_host: name={{ prodswarmnoprodm.openstack.interface_ip }} groups=swarm-cluster ansible_ssh_host={{ prodswarmnoprodm.openstack.interface_ip }} ansible_become=true
+
+- name: Create DNS entry
+  ovh_dns: state=present domain={{ tld_hostname }} name=swarm-node-1 type=A value={{ prodswarmnoprodm.openstack.interface_ip }}
   tags: dns
 
 - name: Wait for VM to start and install first requirements

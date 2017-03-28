@@ -5,7 +5,7 @@ tld_hostname: ""
 timezone: "Europe/Paris"
 env: admin
 admin_mail: "admin@{{ tld_hostname }}"
-top_dn: 'dc=mypaas,dc=ovh'
+top_dn: 'dc=XXX,dc=XXX'
 
 mail:
   domain: "{{ tld_hostname }}"
@@ -189,16 +189,30 @@ cloud:
   region: GRA1
   name: mypaas
   sshkey:
-    publicKey: 'ssh-rsa AAAAB3"
+    publicKey: 'ssh-rsa AAAAB3'
     public_key_file: /home/XXXXX/.ssh/id_rsa.pub
     name: mypaas
 
+
+vlans:
+  - name: devvlan
+    id: 1101
+  - name: prodvlan
+    id: 1102
+  - name: adminvlan
+    id: 1199
+    
 admin:
   name: admin-vm
+  flavor: b2-15
   os: "Ubuntu 16.04"
   key: mypaas
-  flavor: vps-ssd-3
   security_group: admin
+  nics:
+    - Ext-Net
+    - adminvlan
+    - devvlan
+    - prodvlan
   udp:
     - 1194
   tcp:
@@ -209,6 +223,12 @@ admin:
 
 dev:
   security_group: dev
+  flavor: s1-8
+  os: "Ubuntu 16.04"
+  key: mypaas
+  nics:
+    - Ext-Net
+    - devvlan
   tcp:
     - 22
     - 80
@@ -217,6 +237,11 @@ dev:
 
 prd:
   security_group: prd
+  flavor: b2-7
+  os: "Ubuntu 16.04"
+  nics:
+    - Ext-Net
+    - prodvlan
   tcp:
     - 22
     - 80
@@ -226,10 +251,6 @@ prd:
 cluster:
   os: "Ubuntu 16.04"
   key: mypaas
-  flavor: vps-ssd-2
-  security_group: cluster
-  ext_network: Ext-Net
-  network_name: mypaas
   dns:
     - 8.8.8.8
     - 8.8.4.4
