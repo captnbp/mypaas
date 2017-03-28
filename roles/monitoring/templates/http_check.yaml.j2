@@ -16,18 +16,6 @@ instances:
 {% for notify in datadog.notifiers %}
       - {{ notify }}
 {% endfor %}
-  - name: Wiki
-    url: https://wiki.{{ tld_hostname }}
-    timeout: 1
-    http_response_status_code: 200
-    disable_ssl_validation: fasle
-    tags:
-      - env:admin
-      - app:wiki
-    notify:
-{% for notify in datadog.notifiers %}
-      - {{ notify }}
-{% endfor %}
   - name: Odoo
     url: https://odoo.{{ tld_hostname }}
     timeout: 1
