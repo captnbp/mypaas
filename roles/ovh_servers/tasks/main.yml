@@ -42,7 +42,6 @@
     protocol: icmp
     remote_ip_prefix: 0.0.0.0/0
 
-
 - name: Create Security group for dev
   os_security_group: state=present name={{ dev.security_group }} description="DEV firewall rules" cloud={{ cloud.name }}
 
