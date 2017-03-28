@@ -66,7 +66,7 @@ def main():
         for vracks_id in vracks:
             vrack_details = client.get('/vrack/{}'.format(vracks_id))
             vrack_id=vracks_id
-    	    break
+            break
 
     # Get project vrack
     try:
