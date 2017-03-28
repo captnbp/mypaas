@@ -39,14 +39,6 @@ datadog:
   notifiers:
     - slack-mypaas
 
-vlans:
-  - name: intvlan
-    id: 1101
-  - name: prdvlan
-    id: 1102
-  - name: adminvlan
-    id: 1199
- 
 rundeck:
   ip: rundeck
   port: 4440
@@ -201,12 +193,26 @@ cloud:
     public_key_file: /home/XXXXX/.ssh/id_rsa.pub
     name: mypaas
 
+
+vlans:
+  - name: devvlan
+    id: 1101
+  - name: prdvlan
+    id: 1102
+  - name: adminvlan
+    id: 1199
+    
 admin:
   name: admin-vm
   os: "Ubuntu 16.04"
   key: mypaas
   flavor: vps-ssd-3
   security_group: admin
+  nics:
+    - Ext-Net
+    - adminvlan
+    - devvlan
+    - prodvlan
   udp:
     - 1194
   tcp:
@@ -217,6 +223,9 @@ admin:
 
 dev:
   security_group: dev
+  nics:
+    - Ext-Net
+    - devvlan
   tcp:
     - 22
     - 80
@@ -225,6 +234,9 @@ dev:
 
 prd:
   security_group: prd
+  nics:
+    - Ext-Net
+    - prdvlan
   tcp:
     - 22
     - 80
@@ -234,10 +246,6 @@ prd:
 cluster:
   os: "Ubuntu 16.04"
   key: mypaas
-  flavor: vps-ssd-2
-  security_group: cluster
-  ext_network: Ext-Net
-  network_name: mypaas
   dns:
     - 8.8.8.8
     - 8.8.4.4
