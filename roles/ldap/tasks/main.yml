@@ -60,7 +60,10 @@
 
   - name: Generate LDAP init file
     template: src=init.ldif.j2 dest=/data/ldap/database/init.ldif mode=422
+
   - name: Initialize the LDAP repo
     command: docker exec ldap ldapadd -H ldap://localhost -x -D "{{ ldap['bind_dn'] }}" -f /var/lib/ldap/init.ldif -w "{{ ldap['pass'] }}"
+    ignore_errors: yes
+
   - name: Delete init ldif file
     file: path=/data/ldap/database/init.ldif state=absent

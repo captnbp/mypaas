@@ -92,7 +92,7 @@
     #network: "Ext-Net"
     auto_ip: yes
     wait: yes
-    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install shade docker-py \n echo '127.0.0.1 admin-vm' >> /etc/hosts \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start \n sleep 5 \n sudo docker network create -d bridge admin-net" 
+    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install shade docker-py \n echo '127.0.0.1 admin-vm' >> /etc/hosts \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start \n sleep 5 \n sudo docker network create -d bridge admin-net \n sudo ip link set ens4 up \n sudo ip link set ens5 up \n sudo ip link set ens6 up \n sudo dhclient ens4 \n sudo dhclient ens5 \n sudo dhclient ens6" 
     meta: "env=admin"
   register: adminvm
 
@@ -127,7 +127,7 @@
     nics: "{{ dev.nics }}"
     auto_ip: yes
     wait: yes
-    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 dev-swarm-master' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start" 
+    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 dev-swarm-master' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start \n sudo ip link set ens4 up \n sudo dhclient ens4" 
   register: devswarmmastervm
 
 - name: Add created instance to Inventory
@@ -157,7 +157,7 @@
     nics: "{{ dev.nics }}"
     auto_ip: yes
     wait: yes
-    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 dev-swarm-node-1' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start" 
+    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 dev-swarm-node-1' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start \n sudo ip link set ens4 up \n sudo dhclient ens4" 
   register: devswarmnodevm
 
 - name: Add created instance to Inventory
@@ -187,7 +187,7 @@
     nics: "{{ prod.nics }}"
     auto_ip: yes
     wait: yes
-    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 prod-swarm-master' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start" 
+    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 prod-swarm-master' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start \n sudo ip link set ens4 up \n sudo dhclient ens4" 
   register: prodswarmmastervm
 
 - name: Add created instance to Inventory
@@ -217,7 +217,7 @@
     nics: "{{ prod.nics }}"
     auto_ip: yes
     wait: yes
-    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 prod-swarm-node-1' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start" 
+    userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 prod-swarm-node-1' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start \n sudo ip link set ens4 up \n sudo dhclient ens4" 
   register: prodswarmnodevm
 
 - name: Add created instance to Inventory
