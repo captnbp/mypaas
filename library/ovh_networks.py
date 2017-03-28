@@ -99,8 +99,9 @@ def main():
         vlan = client.post('/cloud/project/{}/network/private'.format(project_id),
          name=vlan_name,
          vlanId=vlan_id2,
-         regions=region
+         #regions=region
         )
+        time.sleep(60)
         ###### get vlan and create subnet
         try:
             get_vlans = client.get('/cloud/project/{}/network/private'.format(project_id))
@@ -117,10 +118,12 @@ def main():
                          region=region,
                          start=start_ip,
                         )
-                        module.exit_json(changed=True, output=post_subnet)
+                        time.sleep(5)
+                        subnets = client.get('/cloud/project/{}/network/private/{}/subnet'.format(project_id,vlan_ref))
+                        module.exit_json(changed=True, output=subnets)
                     except Exception as ex:
                         stat='Subnet creation failed'
-                        module.exit_json(changed=False, error=stat)
+                        module.exit_json(changed=False, error=ex)
                     break
 
                 else:
@@ -128,12 +131,13 @@ def main():
                     #module.exit_json(changed=False, output=stat)
         except Exception as ex:
             stat='error get networks'
-            module.exit_json(changed=False, output=stat)
+            module.exit_json(changed=False, output=ex)
 
         module.exit_json(changed=True, vlan=vlan)
 
     except Exception as ex:
-        module.exit_json(changed=False, output=stat_nok)
+        print ex
+        module.exit_json(changed=False, res=ex)
 
 
 # import module snippets
