@@ -1,3 +1,4 @@
 - name: Create Vlans
-  ovh_networks: description="{{ cloud.project }}" project_name="{{ cloud.project }}" name="{{ item.name }}" id="{{ item.id }}" state=present
+  ovh_networks: description="{{ cloud.project }}" project_name="{{ cloud.project }}" name="{{ item.name }}" id="{{ item.id }}" region="{{ item.region }}" cidr="{{ item.cidr }}" start_ip="{{ item.start }}" end_ip="{{ item.end }}" state=present
   with_items: "{{ vlans }}"
+
