@@ -116,11 +116,11 @@
         - push
       ignore_errors: yes
 
-    - name: git add demo project
-      local_action: shell roles/sf_config/tasks/git_push.sh 
-      become_user: "{{ local_user }}"
-      tags:
-        - push
+#    - name: git add demo project
+#      local_action: shell roles/sf_config/tasks/git_push.sh 
+#      become_user: "{{ local_user }}"
+#      tags:
+#        - push
         #- repo
       #git init
       #git add *

@@ -30,6 +30,14 @@ objectClass: top
 member: cn={{ user.sn }} {{ user.givenName }},ou=users,{{ ldap.top_dn }}
 {% endfor %}
 
+dn: cn=administrators,ou=groups,{{ ldap.top_dn }}
+cn: administrators
+objectClass: groupOfNames
+objectClass: top
+{% for user in ldap.users %}
+member: cn={{ user.sn }} {{ user.givenName }},ou=users,{{ ldap.top_dn }}
+{% endfor %}
+
 {% for user in ldap.users %}
 dn: cn={{ user.sn }} {{ user.givenName }},ou=users,{{ ldap.top_dn }}
 givenName: {{ user.givenName }}
