@@ -136,8 +136,8 @@ def main():
         module.exit_json(changed=True, vlan=vlan)
 
     except Exception as ex:
-        print ex
-        module.exit_json(changed=False, res=ex)
+        out='Vlan exist Or creation API error'
+        module.exit_json(changed=False, res=out)
 
 
 # import module snippets
