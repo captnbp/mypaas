@@ -1,0 +1,2 @@
+- name: Create Vrack
+  ovh_vrack: description="{{ cloud.project }}" project_name="{{ cloud.project }}" state=present
