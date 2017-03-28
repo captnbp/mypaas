@@ -39,6 +39,14 @@ datadog:
   notifiers:
     - slack-mypaas
 
+vlans:
+  - name: intvlan
+    id: 1101
+  - name: prdvlan
+    id: 1102
+  - name: adminvlan
+    id: 1199
+ 
 rundeck:
   ip: rundeck
   port: 4440
@@ -189,7 +197,7 @@ cloud:
   region: GRA1
   name: mypaas
   sshkey:
-    publicKey: 'ssh-rsa AAAAB3"
+    publicKey: 'ssh-rsa AAAAB3'
     public_key_file: /home/XXXXX/.ssh/id_rsa.pub
     name: mypaas
 
