@@ -199,13 +199,13 @@ vlans:
     id: 1101
     region: GRA1
     cidr: "10.1.0.0/16"
-    start: 10.1.0.0
-    end: 10.1.255.255
+    start: 10.1.0.1
+    end: 10.1.255.254
   - name: prodvlan
     id: 1102
     region: GRA1
     cidr: "10.2.2.0/16"
-    start: 10.2.0.0
+    start: 10.2.0.1
     end: 10.2.255.254
   - name: adminvlan
     id: 1199
