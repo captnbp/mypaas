@@ -88,12 +88,12 @@ def main():
         # check vrack order status
         order_stat_vrack = client.get('/me/order/{}/status'.format(orderid))
         counter=0
-        while (order_stat_vrack!='delivered') and (counter!=4):  # This constructs an infinite loop
+        while (order_stat_vrack!='delivered') and (counter!=5):  # This constructs an infinite loop
            counter+=1
 	   order_stat_vrack = client.get('/me/order/{}/status'.format(orderid))
            time.sleep(40)
 
-        if counter == 4:
+        if counter == 5:
            print 'Vrack creation timeout'
            exit
         if order_stat_vrack=='delivered':
