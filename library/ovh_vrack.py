@@ -99,7 +99,7 @@ def main():
         if order_stat_vrack=='delivered':
             vrack_status='DONE'
             vrack_id = client.get('/vrack')
-            vrack_details = client.get('/vrack/{}'.format(vracks_id))
+            vrack_details = client.get('/vrack/{}'.format(vrack_id))
             module.exit_json(changed=True, vrack=vrack_id)
     else:
         vrack_exist= True
