@@ -88,7 +88,7 @@
     key_name: "{{ admin.key }}"
     flavor: "{{ admin.flavor }}"
     security_groups: "{{ admin.security_group }}"
-    network: "{{ cluster.ext_network }}"
+    nics: "{{ admin.nics }}"
     auto_ip: yes
     wait: yes
     userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install shade docker-py \n echo '127.0.0.1 admin-vm' >> /etc/hosts \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start \n sleep 5 \n sudo docker network create -d bridge admin-net" 
@@ -117,13 +117,13 @@
   os_server:
     cloud: "{{ cloud.name }}"
     state: present
-    name: swarm-master
+    name: dev-swarm-master
     region_name: "{{ openrc.openrc.region_name }}"
-    image: "{{ cluster.os }}"
-    key_name: "{{ cluster.key }}"
-    flavor: "{{ cluster.flavor }}"
+    image: "{{ dev.os }}"
+    key_name: "{{ dev.key }}"
+    flavor: "{{ dev.flavor }}"
     security_groups: "{{ dev.security_group }}"
-    network: "{{ cluster.ext_network }}"
+    nics: "{{ dev.nics }}"
     auto_ip: yes
     wait: yes
     userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 swarm-master' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start" 
@@ -143,13 +143,13 @@
   os_server:
     cloud: "{{ cloud.name }}"
     state: present
-    name: swarm-node-1
+    name: dev-swarm-node-1
     region_name: "{{ openrc.openrc.region_name }}"
-    image: "{{ cluster.os }}"
-    key_name: "{{ cluster.key }}"
-    flavor: "{{ cluster.flavor }}"
+    image: "{{ dev.os }}"
+    key_name: "{{ dev.key }}"
+    flavor: "{{ dev.flavor }}"
     security_groups: "{{ dev.security_group }}"
-    network: "{{ cluster.ext_network }}"
+    nics: "{{ dev.nics }}"
     auto_ip: yes
     wait: yes
     userdata: "#!/bin/bash \n apt-get update \n apt-get install -y python python-pip \n pip install docker-py \n echo '127.0.0.1 swarm-node-1' >> /etc/hosts \n pip install shade \n curl -sSL https://get.docker.com/ | sh \n sudo usermod -aG docker ubuntu \n sudo service docker start" 
