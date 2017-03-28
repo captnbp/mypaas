@@ -5,7 +5,7 @@ tld_hostname: ""
 timezone: "Europe/Paris"
 env: admin
 admin_mail: "admin@{{ tld_hostname }}"
-top_dn: 'dc=mypaas,dc=ovh'
+top_dn: 'dc=XXX,dc=XXX'
 
 mail:
   domain: "{{ tld_hostname }}"
@@ -197,7 +197,7 @@ cloud:
 vlans:
   - name: devvlan
     id: 1101
-  - name: prdvlan
+  - name: prodvlan
     id: 1102
   - name: adminvlan
     id: 1199
@@ -207,7 +207,6 @@ admin:
   flavor: b2-15
   os: "Ubuntu 16.04"
   key: mypaas
-  flavor: vps-ssd-3
   security_group: admin
   nics:
     - Ext-Net
@@ -224,8 +223,9 @@ admin:
 
 dev:
   security_group: dev
-  flavor: b2-7
+  flavor: s1-8
   os: "Ubuntu 16.04"
+  key: mypaas
   nics:
     - Ext-Net
     - devvlan
@@ -241,7 +241,7 @@ prd:
   os: "Ubuntu 16.04"
   nics:
     - Ext-Net
-    - prdvlan
+    - prodvlan
   tcp:
     - 22
     - 80
