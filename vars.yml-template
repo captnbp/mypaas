@@ -221,10 +221,10 @@ admin:
   key: mypaas
   security_group: admin
   nics:
-    - Ext-Net
-    - adminvlan
-    - devvlan
-    - prodvlan
+    - net-name: Ext-Net
+    - net-name: adminvlan
+    - net-name: devvlan
+    - net-name: prodvlan
   udp:
     - 1194
   tcp:
@@ -239,8 +239,8 @@ dev:
   os: "Ubuntu 16.04"
   key: mypaas
   nics:
-    - Ext-Net
-    - devvlan
+    - net-name: Ext-Net
+    - net-name: devvlan
   tcp:
     - 22
     - 80
@@ -253,8 +253,8 @@ prod:
   os: "Ubuntu 16.04"
   key: mypaas
   nics:
-    - Ext-Net
-    - prodvlan
+    - net-name: Ext-Net
+    - net-name: prodvlan
   tcp:
     - 22
     - 80
