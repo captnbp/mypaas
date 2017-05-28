@@ -31,7 +31,7 @@
     - { role: wiki, tags: ['swf', 'admin', 'wiki'] }
     - { role: gitlab, tags: ['swf', 'admin', 'gitlab'] }
     - { role: jenkins, tags: ['swf', 'admin', 'jenkins'] }
-    - { role: owncloud, tags: ['swf', 'owncloud'] }
+    - { role: nextcloud, tags: ['swf', 'nextcloud'] }
     - { role: odoo, tags: ['swf', 'odoo'] }
     - { role: jenkins_slave_config, tags: ['swf', 'admin', 'jenkins', 'jenkins__slave_config'] }
     - { role: jenkins_config, tags: ['swf', 'admin', 'jenkins', 'jenkins_config'] }
