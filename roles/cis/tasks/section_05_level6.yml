@@ -1,0 +1,10 @@
+---
+
+  - name: 5.6 Ensure access to the su command is restricted (Scored)
+    lineinfile:
+      dest: /etc/pam.d/su
+      line: 'auth            required        pam_wheel.so use_uid'
+      state: present
+    tags:
+      - section5
+      - section5.6

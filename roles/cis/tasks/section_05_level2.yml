@@ -1,0 +1,175 @@
+---
+
+  - name: 5.2.1 Ensure permissions on /etc/ssh/sshd_config are configured (Scored)
+    file:
+      path: /etc/ssh/sshd_config
+      owner: root
+      group: root
+      mode: 0600
+      state: file
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.1
+
+  - name: 5.2.2 Ensure SSH Protocol is set to 2 (Scored)
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^Protocol'
+      line: 'Protocol 2'
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.2
+
+  - name: 5.2.3 Ensure SSH LogLevel is set to INFO (Scored)
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^LogLevel'
+      line: 'LogLevel INFO'
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.3
+
+  - name: 5.2.4 Ensure SSH X11 forwarding is disabled (Scored)
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^X11Forwarding'
+      line: 'X11Forwarding no'
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.4
+
+  - name: 5.2.5 Ensure SSH MaxAuthTries is set to 4 or less (Scored)
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^MaxAuthTries'
+      line: 'MaxAuthTries 4'
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.5
+
+  - name: 5.2.6 Ensure SSH IgnoreRhosts is enabled (Scored)
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^IgnoreRhosts'
+      line: 'IgnoreRhosts yes'
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.6
+
+  - name: 5.2.7 Ensure SSH HostbasedAuthentication is disabled (Scored)
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^HostbasedAuthentication'
+      line: 'HostbasedAuthentication no'
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.7
+
+  - name: 5.2.8 Ensure SSH root login is disabled (Scored)
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^PermitRootLogin'
+      line: 'PermitRootLogin {{ permit_root_login }}'
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.8
+
+  - name: 5.2.9 Ensure SSH PermitEmptyPasswords is disabled (Scored)
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^PermitEmptyPasswords'
+      line: 'PermitEmptyPasswords no'
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.9
+
+  - name: 5.2.10 Ensure SSH PermitUserEnvironment is disabled (Scored)
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^PermitUserEnvironment'
+      line: 'PermitUserEnvironment no'
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.10
+
+  - name: 5.2.11 Ensure only approved MAC algorithms are used (Scored)
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      line: 'MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com'
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.11
+
+  - name: 5.2.12 Ensure SSH Idle Timeout Interval is configured (Scored)
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^{{item.name}}'
+      line: '{{item.name}} {{item.value}}'
+    with_items:
+      - { name: 'ClientAliveInterval' , value: '300' }
+      - { name: 'ClientAliveCountMax' , value: '0' }
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.12
+
+  - name: 5.2.13 Ensure SSH LoginGraceTime is set to one minute or less (Scored)
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^LoginGraceTime'
+      line: 'LoginGraceTime 60'
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.13
+
+  - name: 5.2.14 Ensure SSH access is limited (Scored)
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^{{item.name}}'
+      line: '{{item.name}} {{item.value}}'
+    with_items:
+      - { name: 'AllowUsers' , value: '{{ sshd_allow_users }}' }
+      - { name: 'AllowGroups' , value: '{{ sshd_allow_groups }}' }
+      - { name: 'DenyUsers' , value: '{{ sshd_deny_users }}' }
+      - { name: 'DenyGroups' , value: '{{ sshd_deny_groups }}' }
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.14
+
+  - name: 5.2.15 Ensure SSH warning banner is configured (Scored)
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^Banner'
+      line: 'Banner /etc/issue.net'
+    notify: restart ssh
+    tags:
+      - section5
+      - section5.2
+      - section5.2.15

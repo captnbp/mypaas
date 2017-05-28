@@ -1,0 +1,19 @@
+<?php
+$conf['title'] = 'Wiki';
+$conf['lang'] = 'fr';
+$conf['license'] = '';
+$conf['baseurl'] = 'https://wiki.{{ tld_hostname }}';
+$conf['useacl'] = 1;
+$conf['authtype'] = 'authldap';
+$conf['superuser'] = '@admin,@admins,@administrators';
+$conf['disableactions'] = 'register';
+$conf['htmlok'] = 1;
+$conf['mailfrom'] = 'noreply@{{ tld_hostname }}';
+$conf['plugin']['authldap']['server'] = 'ldap';
+$conf['plugin']['authldap']['usertree'] = '{{ ldap.base_users_dn }}';
+$conf['plugin']['authldap']['grouptree'] = '{{ ldap.base_groups_dn }}';
+$conf['plugin']['authldap']['userfilter'] = '(&(objectClass=posixAccount)(uid=%{user}))';
+$conf['plugin']['authldap']['groupfilter'] = '(&(objectClass=posixGroup)(|(gidNumber=%{gid})(memberUID=%{user})))';
+$conf['plugin']['authldap']['version'] = 3;
+$conf['plugin']['authldap']['binddn'] = '{{ ldap.bind_dn }}';
+$conf['plugin']['authldap']['bindpw'] = '{{ ldap.pass }}';

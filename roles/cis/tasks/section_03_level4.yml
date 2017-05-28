@@ -1,0 +1,52 @@
+---
+
+  - name: 3.4.1 Ensure TCP Wrappers is installed (Scored)
+    apt:
+      name: tcpd
+      state: present
+    tags:
+      - section3
+      - section3.4
+      - section3.4.1
+
+  - name: 3.4.2 Ensure /etc/hosts.allow is configured (Scored)
+    lineinfile:
+      dest: /etc/hosts.allow
+      line: 'ALL:ALL'
+    when: enable_hosts_allow == True
+    tags:
+      - section3
+      - section3.4
+      - section3.4.2
+
+  - name: 3.4.3 Ensure /etc/hosts.deny is configured (Scored)
+    lineinfile:
+      dest: /etc/hosts.deny
+      line: 'ALL:ALL'
+    when: enable_hosts_deny == True
+    tags:
+      - section3
+      - section3.4
+      - section3.4.3
+
+  - name: 3.4.4 Ensure permissions on /etc/hosts.allow are configured (Scored)
+    file:
+      path: /etc/hosts.allow
+      owner: root
+      group: root
+      mode: 0644
+    tags:
+      - section3
+      - section3.4
+      - section3.4.5
+
+  - name: 3.4.5 Ensure permissions on /etc/hosts.deny are 644 (Scored)
+    file:
+      path: /etc/hosts.deny
+      owner: root
+      group: root
+      mode: 0644
+    tags:
+      - section3
+      - section3.4
+      - section3.4.5

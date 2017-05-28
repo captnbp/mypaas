@@ -1,0 +1,21 @@
+---
+
+  - name: 3.1.1 Ensure IP forwarding is disabled (Scored)
+    sysctl:
+      name: net.ipv4.ip_forward
+      value: '{{net_ipv4_ip_forward}}'
+      state: present
+    tags:
+      - section3
+      - section3.1
+      - section3.1.1
+
+  - name: 3.1.2 Ensure packet redirect sending is disabled (Scored)
+    sysctl:
+      name: net.ipv4.conf.all.send_redirects
+      value: 0
+      state: present
+    tags:
+      - section3
+      - section3.1
+      - section3.1.2

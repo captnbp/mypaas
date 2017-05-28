@@ -1,0 +1,11 @@
+---
+
+  - name: 1.8 Ensure updates, patches, and additional security software are installed (Not Scored)
+    apt:
+      update_cache: yes
+      cache_valid_time: "{{apt_cache_valid_time}}"
+      upgrade: yes
+    when: apt_upgrade == True
+    tags:
+      - section1
+      - section1.8

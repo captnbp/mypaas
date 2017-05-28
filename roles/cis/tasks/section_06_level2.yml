@@ -1,0 +1,496 @@
+---
+
+  - name: 6.2.1 Ensure password fields are not empty (Scored)
+    command: awk -F':' '($2 == "" ) { print $1 }' /etc/shadow
+    register: awk_empty_shadow
+    changed_when: False
+    check_mode: no
+    failed_when: awk_empty_shadow.stdout != '' and lock_shadow_accounts == False
+    tags:
+      - section6
+      - section6.2
+      - section6.2.1
+
+  - name: 6.2.2 Ensure no legacy "+" entries exist in /etc/passwd (Scored)
+    command: grep '^+:' /etc/passwd
+    register: plus_pass
+    failed_when: plus_pass.rc == 0
+    changed_when: plus_pass.rc == 0
+    tags:
+      - section6
+      - section6.2
+      - section6.2.2
+
+  - name: 6.2.3 Ensure no legacy "+" entries exist in /etc/shadow (Scored)
+    command: grep '^+:' /etc/shadow
+    register: plus_shadow
+    failed_when: plus_shadow.rc == 0
+    changed_when: plus_shadow.rc == 0
+    tags:
+      - section6
+      - section6.2
+      - section6.2.3
+
+  - name: 6.2.4 Ensure no legacy "+" entries exist in /etc/group (Scored)
+    command: grep '^+:' /etc/group
+    register: plus_group
+    failed_when: plus_group.rc == 0
+    changed_when: plus_group.rc == 0
+    tags:
+      - section6
+      - section6.2
+      - section6.2.4
+
+  - name: 6.2.5 Ensure root is the only UID 0 account (Scored)
+    command: awk -F':' '($3 == 0) { print $1 }' /etc/passwd
+    register: uid_zero_root
+    changed_when: False
+    failed_when: uid_zero_root.stdout != 'root'
+    tags:
+      - section6
+      - section6.2
+      - section6.2.5
+
+  - copy:
+      src: scripts/6.2.6.sh
+      dest: /opt/6.2.6.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section6
+      - section6.2
+      - section6.2.6
+
+  - name: 6.2.6 Ensure root PATH Integrity (Scored)
+    shell: /opt/6.2.6.sh
+    register: root_path_integrity
+    tags:
+      - section6
+      - section6.2
+      - section6.2.6
+
+  - debug: var=root_path_integrity.stdout_lines
+
+  - file:
+      path: /opt/6.2.6.sh
+      owner: root
+      group: root
+      state: absent
+    tags:
+      - section6
+      - section6.2
+      - section6.2.6
+
+  - copy:
+      src: scripts/6.2.7.sh
+      dest: /opt/6.2.7.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section6
+      - section6.2
+      - section6.2.7
+
+  - name: 6.2.7 Ensure all users' home directories exist (Scored)
+    shell: /opt/6.2.7.sh
+    register: home_directories_exist
+    tags:
+      - section6
+      - section6.2
+      - section6.2.7
+
+  - debug: var=home_directories_exist.stdout_lines
+
+  - file:
+      path: /opt/6.2.7.sh
+      owner: root
+      group: root
+      state: absent
+    tags:
+      - section6
+      - section6.2
+      - section6.2.7
+
+  - copy:
+      src: scripts/6.2.8.sh
+      dest: /opt/6.2.8.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section6
+      - section6.2
+      - section6.2.8
+
+  - name: 6.2.8 Ensure users' home directories permissions are 750 or more restrictive (Scored)
+    shell: /opt/6.2.8.sh
+    register: home_directories_permissions
+    when: modify_user_homes == True
+    tags:
+      - section6
+      - section6.2
+      - section6.2.8
+
+  - debug: var=home_directories_permissions.stdout_lines
+
+  - file:
+      path: /opt/6.2.8.sh
+      owner: root
+      group: root
+      state: absent
+    tags:
+      - section6
+      - section6.2
+      - section6.2.8
+
+  - copy:
+      src: scripts/6.2.9.sh
+      dest: /opt/6.2.9.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section6
+      - section6.2
+      - section6.2.9
+
+  - name: 6.2.9 Ensure users own their home directories (Scored)
+    shell: /opt/6.2.9.sh
+    register: home_directories_own
+    tags:
+      - section6
+      - section6.2
+      - section6.2.9
+
+  - debug: var=home_directories_own.stdout_lines
+
+  - file:
+      path: /opt/6.2.9.sh
+      owner: root
+      group: root
+      state: absent
+    tags:
+      - section6
+      - section6.2
+      - section6.2.9
+
+  - copy:
+      src: scripts/6.2.10.sh
+      dest: /opt/6.2.10.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section6
+      - section6.2
+      - section6.2.10
+
+  - name: 6.2.10 Ensure users' dot files are not group or world writable (Scored)
+    shell: /opt/6.2.10.sh
+    register: user_dot_files
+    tags:
+      - section6
+      - section6.2
+      - section6.2.10
+
+  - debug: var=user_dot_files.stdout_lines
+
+  - file:
+      path: /opt/6.2.10.sh
+      owner: root
+      group: root
+      state: absent
+    tags:
+      - section6
+      - section6.2
+      - section6.2.10
+
+  - copy:
+      src: scripts/6.2.11.sh
+      dest: /opt/6.2.11.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section6
+      - section6.2
+      - section6.2.11
+
+  - name: 6.2.11 Ensure no users have .forward files (Scored)
+    shell: /opt/6.2.11.sh
+    register: user_forward_files
+    tags:
+      - section6
+      - section6.2
+      - section6.2.11
+
+  - debug: var=user_forward_files.stdout_lines
+
+  - file:
+      path: /opt/6.2.11.sh
+      owner: root
+      group: root
+      state: absent
+    tags:
+      - section6
+      - section6.2
+      - section6.2.11
+
+  - copy:
+      src: scripts/6.2.12.sh
+      dest: /opt/6.2.12.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section6
+      - section6.2
+      - section6.2.12
+
+  - name: 6.2.12 Ensure no users have .netrc files (Scored)
+    shell: /opt/6.2.12.sh
+    register: user_netrc_files
+    tags:
+      - section6
+      - section6.2
+      - section6.2.12
+
+  - debug: var=user_netrc_files.stdout_lines
+
+  - file:
+      path: /opt/6.2.12.sh
+      owner: root
+      group: root
+      state: absent
+    tags:
+      - section6
+      - section6.2
+      - section6.2.12
+
+  - copy:
+      src: scripts/6.2.13.sh
+      dest: /opt/6.2.13.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section6
+      - section6.2
+      - section6.2.13
+
+  - name: 6.2.13 Ensure users' .netrc Files are not group or world accessible (Scored)
+    shell: /opt/6.2.13.sh
+    register: user_netrc_files_permissions
+    tags:
+      - section6
+      - section6.2
+      - section6.2.13
+
+  - debug: var=user_netrc_files_permissions.stdout_lines
+
+  - file:
+      path: /opt/6.2.13.sh
+      owner: root
+      group: root
+      state: absent
+    tags:
+      - section6
+      - section6.2
+      - section6.2.13
+
+  - copy:
+      src: scripts/6.2.14.sh
+      dest: /opt/6.2.14.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section6
+      - section6.2
+      - section6.2.14
+
+  - name: 6.2.14 Ensure no users have .rhosts files (Scored)
+    shell: /opt/6.2.14.sh
+    register: user_rhosts_files
+    tags:
+      - section6
+      - section6.2
+      - section6.2.14
+
+  - debug: var=user_rhosts_files.stdout_lines
+
+  - file:
+      path: /opt/6.2.14.sh
+      owner: root
+      group: root
+      state: absent
+    tags:
+      - section6
+      - section6.2
+      - section6.2.14
+
+  - copy:
+      src: scripts/6.2.15.sh
+      dest: /opt/6.2.15.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section6
+      - section6.2
+      - section6.2.15
+
+  - name: 6.2.15 Ensure all groups in /etc/passwd exist in /etc/group (Scored)
+    shell: /opt/6.2.15.sh
+    register: check_groups_in_passwd
+    tags:
+      - section6
+      - section6.2
+      - section6.2.15
+
+  - debug: var=check_groups_in_passwd.stdout_lines
+
+  - file:
+      path: /opt/6.2.15.sh
+      owner: root
+      group: root
+      state: absent
+    tags:
+      - section6
+      - section6.2
+      - section6.2.15
+
+  - copy:
+      src: scripts/6.2.16.sh
+      dest: /opt/6.2.16.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section6
+      - section6.2
+      - section6.2.16
+
+  - name: 6.2.16 Ensure no duplicate UIDs exist (Scored)
+    shell: /opt/6.2.16.sh
+    register: duplicate_uids
+    tags:
+      - section6
+      - section6.2
+      - section6.2.16
+
+  - debug: var=duplicate_uids.stdout_lines
+
+  - file:
+      path: /opt/6.2.16.sh
+      owner: root
+      group: root
+      state: absent
+    tags:
+      - section6
+      - section6.2
+      - section6.2.16
+
+  - copy:
+      src: scripts/6.2.17.sh
+      dest: /opt/6.2.17.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section6
+      - section6.2
+      - section6.2.17
+
+  - name: 6.2.17 Ensure no duplicate GIDs exist (Scored)
+    shell: /opt/6.2.17.sh
+    register: duplicate_gids
+    tags:
+      - section6
+      - section6.2
+      - section6.2.17
+
+  - debug: var=duplicate_gids.stdout_lines
+
+  - file:
+      path: /opt/6.2.17.sh
+      owner: root
+      group: root
+      state: absent
+    tags:
+      - section6
+      - section6.2
+      - section6.2.17
+
+  - copy:
+      src: scripts/6.2.18.sh
+      dest: /opt/6.2.18.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section6
+      - section6.2
+      - section6.2.18
+
+  - name: 6.2.18 Ensure no duplicate user names exist (Scored)
+    shell: /opt/6.2.18.sh
+    register: duplicate_users
+    tags:
+      - section6
+      - section6.2
+      - section6.2.18
+
+  - debug: var=duplicate_users.stdout_lines
+
+  - file:
+      path: /opt/6.2.18.sh
+      owner: root
+      group: root
+      state: absent
+    tags:
+      - section6
+      - section6.2
+      - section6.2.18
+
+  - copy:
+      src: scripts/6.2.19.sh
+      dest: /opt/6.2.19.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section6
+      - section6.2
+      - section6.2.19
+
+  - name: 6.2.19 Ensure no duplicate group names exist (Scored)
+    shell: /opt/6.2.19.sh
+    register: duplicate_groups
+    tags:
+      - section6
+      - section6.2
+      - section6.2.19
+
+  - debug: var=duplicate_groups.stdout_lines
+
+  - file:
+      path: /opt/6.2.19.sh
+      owner: root
+      group: root
+      state: absent
+    tags:
+      - section6
+      - section6.2
+      - section6.2.19
+
+  - name: 6.2.20 Ensure shadow group is empty (Scored)
+    shell: grep '^shadow' /etc/group | cut -f4 -d':'
+    register: shadow_group_empty
+    failed_when: shadow_group_empty.stdout != ''
+    tags:
+      - section6
+      - section6.2
+      - section6.2.20

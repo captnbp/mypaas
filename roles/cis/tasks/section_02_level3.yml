@@ -1,0 +1,49 @@
+---
+
+  - name: 2.3.1 Ensure NIS Client is not installed (Scored)
+    apt:
+      name: nis
+      state: absent
+    tags:
+      - section2
+      - section2.3
+      - section2.3.1
+
+  - name: 2.3.2 Ensure rsh client is not installed (Scored)
+    apt:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - rsh-client
+      - rsh-redone-client
+    tags:
+      - section2
+      - section2.3
+      - section2.3.2
+
+  - name: 2.3.3 Ensure talk client is not installed (Scored)
+    apt:
+      name: talk
+      state: absent
+    tags:
+      - section2
+      - section2.3
+      - section2.3.3
+
+  - name: 2.3.4 Ensure telnet client is not installed (Scored)
+    apt:
+      name: telnet
+      state: absent
+    tags:
+      - section2
+      - section2.3
+      - section2.3.4
+
+  - name: 2.3.5 Ensure LDAP client is not installed (Scored)
+    apt:
+      name: ldap-utils
+      state: absent
+    tags:
+      - section2
+      - section2.3
+      - section2.3.5

@@ -1,0 +1,45 @@
+---
+
+  - name: 3.5.1 Ensure DCCP is disabled (Not Scored)
+    lineinfile:
+      dest: /etc/modprobe.d/CIS.conf
+      line: 'install dccp /bin/true'
+      state: present
+      create: True
+    tags:
+      - section3
+      - section3.5
+      - section3.5.1
+
+  - name: 3.5.2 Ensure SCTP is disabled (Not Scored)
+    lineinfile:
+      dest: /etc/modprobe.d/CIS.conf
+      line: 'install sctp /bin/true'
+      state: present
+      create: True
+    tags:
+      - section3
+      - section3.5
+      - section3.5.2
+
+  - name: 3.5.3 Ensure RDS is disabled (Not Scored)
+    lineinfile:
+      dest: /etc/modprobe.d/CIS.conf
+      line: 'install rds /bin/true'
+      state: present
+      create: True
+    tags:
+      - section3
+      - section3.5
+      - section3.5.3
+
+  - name: 3.5.4 Ensure TIPC is disabled (Not Scored)
+    lineinfile:
+      dest: /etc/modprobe.d/CIS.conf
+      line: 'install tipc /bin/true'
+      state: present
+      create: True
+    tags:
+      - section3
+      - section3.5
+      - section3.5.4

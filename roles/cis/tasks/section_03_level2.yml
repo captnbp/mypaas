@@ -1,0 +1,82 @@
+---
+
+  - name: 3.2.1 Ensure source routed packets are not accepted (Scored)
+    sysctl:
+      name: net.ipv4.conf.all.accept_source_route
+      value: 0
+      state: present
+    tags:
+      - section3
+      - section3.2
+      - section3.2.1
+
+  - name: 3.2.2 Ensure ICMP redirects are not accepted (Scored)
+    sysctl:
+      name: net.ipv4.conf.all.accept_redirects
+      value: 0
+      state: present
+    tags:
+      - section3
+      - section3.2
+      - section3.2.2
+
+  - name: 3.2.3 Ensure secure ICMP redirects are not accepted (Scored)
+    sysctl:
+      name: net.ipv4.conf.all.secure_redirects
+      value: 0
+      state: present
+    tags:
+      - section3
+      - section3.2
+      - section3.2.3
+
+  - name: 3.2.4 Ensure suspicious packets are logged (Scored)
+    sysctl:
+      name: net.ipv4.conf.all.log_martians
+      value: 1
+      state: present
+    tags:
+      - section3
+      - section3.2
+      - section3.2.4
+
+  - name: 3.2.5 Ensure broadcast ICMP requests are ignored (Scored)
+    sysctl:
+      name: net.ipv4.icmp_echo_ignore_broadcasts
+      value: 1
+      state: present
+    tags:
+      - section3
+      - section3.2
+      - section3.2.5
+
+  - name: 3.2.6 Ensure bogus ICMP responses are ignored (Scored)
+    sysctl:
+      name: net.ipv4.icmp_ignore_bogus_error_responses
+      value: 1
+      state: present
+    tags:
+      - section3
+      - section3.2
+      - section3.2.6
+
+  - name: 3.2.7 Ensure Reverse Path Filtering is enabled (Scored)
+    sysctl:
+      name: net.ipv4.conf.all.rp_filter
+      value: 1
+      state: present
+    tags:
+      - section3
+      - section3.2
+      - section3.2.7
+
+  - name: 3.2.8 Ensure TCP SYN Cookies is enabled (Scored)
+    sysctl:
+      name: net.ipv4.tcp_syncookies
+      value: 1
+      state: present
+    when: enable_tcp_syncookies == True
+    tags:
+      - section3
+      - section3.2
+      - section3.2.8

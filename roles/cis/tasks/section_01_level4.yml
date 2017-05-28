@@ -1,0 +1,59 @@
+---
+
+  - name: 1.4.1 Ensure permissions on bootloader config are configured (Scored)
+    file:
+      dest: /boot/grub/grub.cfg
+      owner: root
+      group: root
+      mode: 0600
+    tags:
+      - section1
+      - section1.4
+      - section1.4.1
+
+  - command: grep "^password" /boot/grub/grub.cfg
+    register: boot_password
+    failed_when: false
+    ignore_errors: yes 
+    changed_when: False
+    tags:
+      - section1
+      - section1.4
+      - section1.4.2
+
+  - name: 1.4.2 Ensure bootloader password is set (Scored)
+    lineinfile:
+        dest: /etc/grub.d/40_custom
+        regexp: '^{{item.name}}'
+        line: '{{item.name}}{{item.value}} {{item.value2}}'
+        state: present
+    with_items:
+      - { name: 'set superusers=' , value: '"{{grub_superuser}}"' , value2: '' }
+      - { name: 'password_pbkdf2 ' , value: '{{grub_superuser}}' , value2: '{{root_password_grub}}' }
+    when: boot_password.rc == 1 and set_bootloader_password == true
+    notify: update grub
+    tags:
+      - section1
+      - section1.4
+      - section1.4.2
+
+  - command: grep "^root:[*\!]:" /etc/shadow
+    register: root_password_set
+    failed_when: false
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section1
+      - section1.4
+      - section1.4.3
+
+  - name: 1.4.3 Ensure authentication required for single user mode (Scored)
+    user:
+      name: root
+      state: present
+      password: "{{ root_password }}"
+    when: root_password_set.rc == 0
+    tags:
+      - section1
+      - section1.4
+      - section1.4.3

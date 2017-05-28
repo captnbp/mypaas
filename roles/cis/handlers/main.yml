@@ -1,0 +1,60 @@
+---
+
+  - name: restart auditd
+    service:
+      name: auditd
+      state: restarted
+    changed_when: False
+    ignore_errors: True
+
+  - name: restart postfix
+    service:
+      name: postfix
+      state: restarted
+    changed_when: False
+    ignore_errors: True
+
+  - name: restart rsyslog
+    service:
+      name: rsyslog
+      state: restarted
+    changed_when: False
+    ignore_errors: True
+
+  - name: restart ssh
+    service:
+      name: ssh
+      state: restarted
+    changed_when: False
+    ignore_errors: True
+
+  - name: restart syslog-ng
+    service:
+      name: syslog-ng
+      state: restarted
+    changed_when: False
+    ignore_errors: True
+
+  - name: update grub
+    command: update-grub
+    changed_when: False
+    ignore_errors: True
+
+  - name: restart iptables
+    shell: iptables-restore < "{{ iptables_rules_file }}"
+    changed_when: False
+    ignore_errors: True
+
+  - name: restart chrony
+    service:
+      name: chrony 
+      state: restarted
+    changed_when: False
+    ignore_errors: True  
+
+  - name: restart ntp
+    service:
+      name: ntp
+      state: restarted
+    changed_when: False
+    ignore_errors: True

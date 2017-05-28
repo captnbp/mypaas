@@ -1,0 +1,12 @@
+---
+
+  - stat:
+      path: /etc/securetty
+    register: securetty_file
+
+  - name: 5.5 Ensure root login is restricted to system console (Not Scored)
+    debug: msg='*** Check /etc/securetty for console allowed for root access ***'
+    when: securetty_file.stat.exists == True
+    tags:
+      - section5
+      - section5.5

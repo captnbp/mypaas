@@ -1,0 +1,231 @@
+---
+
+  - name: 4.2.3 Ensure rsyslog or syslog-ng is installed (Scored)
+    apt:
+      name: "{{ syslog_package }}"
+      state: present
+    tags:
+      - section4
+      - section4.2
+      - section4.2.3
+
+  - name: 4.2.1.1 Ensure rsyslog Service is enabled (Scored)
+    service:
+      name: rsyslog
+      state: started
+      enabled: yes
+    when: syslog_package == "rsyslog"
+    tags:
+      - section4
+      - section4.2
+      - section4.2.1.1
+
+  - name: 4.2.1.2 Ensure logging is configured (Not Scored)
+    lineinfile:
+        dest: /etc/rsyslog.conf
+        line: '{{ item }}'
+        insertafter: EOF
+    with_items:
+      - '*.emerg :omusrmsg:*'
+      - 'mail.* -/var/log/mail'
+      - 'mail.info -/var/log/mail.info'
+      - 'mail.warning -/var/log/mail.warn'
+      - 'mail.err /var/log/mail.err'
+      - 'news.crit -/var/log/news/news.crit'
+      - 'news.err -/var/log/news/news.err'
+      - 'news.notice -/var/log/news/news.notice'
+      - '*.=warning;*.=err -/var/log/warn'
+      - '*.crit /var/log/warn'
+      - '*.*;mail.none;news.none -/var/log/messages'
+      - 'local0,local1.* -/var/log/localmessages'
+      - 'local2,local3.* -/var/log/localmessages'
+      - 'local4,local5.* -/var/log/localmessages'
+      - 'local6,local7.* -/var/log/localmessages'
+    notify: restart rsyslog
+    when: syslog_package == "rsyslog"
+    tags:
+      - section4
+      - section4.2
+      - section4.2.1.2
+
+  - command: find /etc/rsyslog.d -type f
+    register: rsyslog_files
+    changed_when: False
+    tags:
+      - section4
+      - section4.2
+      - section4.2.1.3
+
+  - command: grep ^\\$FileCreateMode {{ item }}
+    with_items:
+      - '/etc/rsyslog.conf'
+      - '{{ rsyslog_files.stdout_lines }}'    
+    register: filecreate_exists
+    ignore_errors: True
+    notify: restart rsyslog
+    when: syslog_package == "rsyslog"
+    tags:
+      - section4
+      - section4.2
+      - section4.2.1.3
+
+  - name: 4.2.1.3 Ensure rsyslog default file permissions configured (Scored)
+    lineinfile:
+      dest: "{{ item }}"
+      regexp: '^\$FileCreateMode'
+      line: '$FileCreateMode 0640'
+    with_items:
+      - '/etc/rsyslog.conf'
+      - '{{ rsyslog_files.stdout_lines }}'
+    notify: restart rsyslog
+    when: filecreate_exists == 0 and syslog_package == "rsyslog"
+    tags:
+      - section4
+      - section4.2
+      - section4.2.1.3
+
+  - command: grep "^*.*[^I][^I]*@" /etc/rsyslog.conf
+    register: remoteloghost
+    changed_when: False
+    failed_when: False
+    check_mode: no
+    tags:
+      - section4
+      - section4.2
+      - section4.2.1.4
+
+  - name: 4.2.1.4 Ensure rsyslog is configured to send logs to a remote log host (Scored)
+    lineinfile:
+      dest: /etc/rsyslog.conf
+      line: '*.* @@{{remote_logs_host_address}}'
+      insertafter: EOF
+      state: present
+    notify: restart rsyslog
+    when: set_rsyslog_remote == True and remoteloghost.rc == 1 and syslog_package == "rsyslog"
+    tags:
+      - section4
+      - section4.2
+      - section4.2.1.4
+
+  - command: grep '^$ModLoad imtcp' /etc/rsyslog.conf
+    register: moadloadpresent
+    failed_when: False
+    check_mode: no
+    tags:
+      - section4
+      - section4.2
+      - section4.2.1.5
+
+  - name: 4.2.1.5 Ensure remote rsyslog messages are only accepted on designated log hosts. (Not Scored)
+    lineinfile:
+      dest: /etc/rsyslog.conf
+      regexp: '^#({{ item }})'
+      line: '{{ item }}'
+      state: present
+    with_items:
+        - '$ModLoad imtcp'
+        - '$InputTCPServerRun 514'
+    notify: restart rsyslog
+    when: set_rsyslog_remote == True and moadloadpresent.rc == 1 and syslog_package == "rsyslog"
+    tags:
+      - section4
+      - section4.2
+      - section4.2.1.5
+
+  - command: dpkg-query -s syslog-ng
+    register: syslognginstalled
+    changed_when: False
+    failed_when: False
+    check_mode: no
+    tags:
+      - section4
+      - section4.2
+      - section4.2.2.1
+
+  - name: 4.2.2.1 Ensure syslog-ng service is enabled (Scored)
+    service:
+      name: syslog-ng
+      enabled: yes
+    when: syslognginstalled.rc == 0 and syslog_package == "syslog-ng"
+    tags:
+      - section4
+      - section4.2
+      - section4.2.2.1
+
+  - name: 4.2.2.2 Ensure logging is configured (Not Scored)
+    lineinfile:
+        dest: /etc/syslog-ng/syslog-ng.conf
+        line: '{{ item }}'
+        insertafter: EOF
+    with_items:
+      - 'log { source(src); source(chroots); filter(f_console); destination(console); };'
+      - 'log { source(src); source(chroots); filter(f_console); destination(xconsole); };'
+      - 'log { source(src); source(chroots); filter(f_newscrit); destination(newscrit); };'
+      - 'log { source(src); source(chroots); filter(f_newserr); destination(newserr); };'
+      - 'log { source(src); source(chroots); filter(f_newsnotice); destination(newsnotice); };'
+      - 'log { source(src); source(chroots); filter(f_mailinfo); destination(mailinfo); };'
+      - 'log { source(src); source(chroots); filter(f_mailwarn); destination(mailwarn); };'
+      - 'log { source(src); source(chroots); filter(f_mailerr); destination(mailerr); };'
+      - 'log { source(src); source(chroots); filter(f_mail); destination(mail); };'
+      - 'log { source(src); source(chroots); filter(f_acpid); destination(acpid); flags(final); };'
+      - 'log { source(src); source(chroots); filter(f_acpid_full); destination(devnull); flags(final); };'
+      - 'log { source(src); source(chroots); filter(f_acpid_old); destination(acpid); flags(final); };'
+      - 'log { source(src); source(chroots); filter(f_netmgm); destination(netmgm); flags(final); };'
+      - 'log { source(src); source(chroots); filter(f_local); destination(localmessages); };'
+      - 'log { source(src); source(chroots); filter(f_messages); destination(messages); };'
+      - 'log { source(src); source(chroots); filter(f_iptables); destination(firewall); };'
+      - 'log { source(src); source(chroots); filter(f_warn); destination(warn); };'
+    changed_when: False
+    when: syslognginstalled.rc == 0 and syslog_package == "syslog-ng"
+    notify: restart syslog-ng
+    tags:
+      - section4
+      - section4.2
+      - section4.2.2.2
+
+  - name: 4.2.2.3 Ensure syslog-ng default file permissions configured (Scored)
+    lineinfile:
+      dest: /etc/syslog-ng/syslog-ng.conf
+      regexp: '^options'
+      line: 'options { chain_hostnames(off); flush_lines(0); perm(0640); stats_freq(3600); threaded(yes); };'
+    when: syslognginstalled.rc == 0 and syslog_package == "syslog-ng"
+    notify: restart syslog-ng
+    tags:
+      - section4
+      - section4.2
+      - section4.2.2.3
+
+  - name: 4.2.2.4 Ensure syslog-ng is configured to send logs to a remote log host (Scored)
+    lineinfile:
+      dest: /etc/syslog-ng/syslog-ng.conf
+      regexp: '^destination'
+      line: 'destination logserver { tcp(" logfile.example.com " port(514)); }; log { source(src); destination(logserver); };'
+    when: syslognginstalled.rc == 0 and syslog_package == "syslog-ng"
+    notify: restart syslog-ng
+    tags:
+      - section4
+      - section4.2
+      - section4.2.2.4
+
+  - name: 4.2.2.5 Ensure remote syslog-ng messages are only accepted on designated log hosts (Not Scored)
+    lineinfile:
+      dest: /etc/syslog-ng/syslog-ng.conf
+      line: '{{ item }}"'
+      insertafter: EOF
+    with_items:
+      - 'source net{ tcp(); };'
+      - 'destination remote { file("/var/log/remote/${FULLHOST}-log"); };'
+      - 'log { source(net); destination(remote); };'
+    when: syslognginstalled.rc == 0 and syslog_package == "syslog-ng"
+    notify: restart syslog-ng
+    tags:
+      - section4
+      - section4.2
+      - section4.2.2.5
+
+  - name: 4.2.4 Ensure permissions on all logfiles are configured (Scored)
+    shell: chmod -R g-wx,o-rwx /var/log/*
+    tags:
+      - section4
+      - section4.2
+      - section4.2.4

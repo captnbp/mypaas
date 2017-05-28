@@ -1,0 +1,96 @@
+---
+
+  - name: 3.6.1 Ensure iptables is installed (Scored)
+    apt:
+      name: "{{ item }}" 
+      state: present
+    with_items:
+      - iptables
+      - iptables-persistent
+    when: activate_iptables == True
+    tags:
+      - section3
+      - section3.6
+      - section3.6.1
+
+  - shell: iptables -L|egrep 'INPUT|FORWARD|OUTPUT'|grep "policy DROP"
+    register: drop_policy
+    failed_when: False
+    changed_when: False
+    tags:
+      - section3
+      - section3.6
+      - section3.6.2
+
+  - name: 3.6.2 Ensure default deny firewall policy (Scored)
+    lineinfile:
+      name: "{{iptables_rules_file}}"
+      line: "{{ item }}"
+      insertbefore: '^COMMIT'
+      create: yes
+    with_items:
+      - '-P INPUT DROP'
+      - '-P FORWARD DROP'
+      - '-P OUTPUT DROP'
+    when: activate_iptables == True and firewall_policy_drop == True and drop_policy.rc == 1
+    notify: restart iptables
+    tags:
+      - section3
+      - section3.6
+      - section3.6.2
+
+  - name: 3.6.3 Ensure loopback traffic is configured (Scored)
+    lineinfile: 
+      name: "{{iptables_rules_file}}"
+      line: "{{ item }}"
+      insertbefore: '^COMMIT'
+      create: yes
+    with_items:
+      - '-A INPUT -i lo -j ACCEPT'
+      - '-A OUTPUT -o lo -j ACCEPT'
+      - '-A INPUT -s 127.0.0.0/8 -j DROP'
+    when: activate_iptables == True
+    notify: restart iptables
+    tags:
+      - section3
+      - section3.6
+      - section3.6.3
+
+  - name: 3.6.4 Ensure outbound and established connections are configured (Not Scored)
+    lineinfile: 
+      name: "{{iptables_rules_file}}"
+      line: "{{ item }}"
+      insertbefore: '^COMMIT'
+      create: yes
+    with_items:
+      - '-A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT'
+      - '-A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT'
+      - '-A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT'
+      - '-A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT'
+      - '-A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT'
+      - '-A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT'
+      - '-A INPUT -p tcp --dport ssh -j ACCEPT'
+      - '-A OUTPUT -p tcp --sport 22 -j ACCEPT'
+    when: activate_iptables == True
+    notify: restart iptables
+    tags:
+      - section3
+      - section3.6
+      - section3.6.4
+
+  - shell: ss -ltnu|egrep 'tcp|udp'|awk '{ print $5 }'|cut -d":" -f2|sort|uniq
+    register: listening_ports
+    failed_when: False
+    changed_when: False
+    tags:
+      - section3
+      - section3.6
+      - section3.6.5
+
+  - name: 3.6.5 Ensure firewall rules exist for all open ports (Scored)
+    debug:
+      msg: "Check firewall rules for the listening ports: {{listening_ports.stdout_lines}}"
+    tags:
+      - section3
+      - section3.6
+      - section3.6.5

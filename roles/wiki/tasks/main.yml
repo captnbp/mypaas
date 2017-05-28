@@ -1,0 +1,28 @@
+- name: Wiki
+  docker_container:
+    name: wiki
+    image: "{{ wiki.docker_image}}"
+    restart_policy: always
+    pull: always
+    volumes:
+      - "/data/wiki:/var/dokuwiki-storage"
+    networks: 
+      - name: "{{ env }}-net"
+
+- name: Add dokuwiki auth conf file
+  template: src=local.php.j2 dest=/data/wiki/conf/local.php owner=nobody group=nogroup mode=0640
+
+- name: Add dokuwiki Nginx conf file
+  template: src=nginx.conf.j2 dest=/etc/nginx/sites-enabled/dokuwiki.conf mode=0440
+  notify:
+   - Reload Nginx
+
+
+- name: Cron backup Wiki
+  cron:
+    name: Cron backup Wiki
+    minute: "0"
+    hour: "3"
+    job: dogwrap -n "Backup Wiki" -k {{ datadog.api_key }} --submit_mode errors  "tar zcf {{ backup.path }}/{{ env }}/wiki-$(date '+%Y%m%d').tar.gz /data/wiki" 2>&1
+  when: backup
+

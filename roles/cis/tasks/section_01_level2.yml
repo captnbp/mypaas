@@ -1,0 +1,34 @@
+---
+
+  - name: 1.2.1 Ensure package manager repositories are configured (Not Scored)
+    lineinfile:
+      dest: /etc/apt/sources.list
+      line: '{{item}}'
+      state: present
+      create: yes
+    with_items:
+      - 'deb http://archive.ubuntu.com/ubuntu/ xenial main restricted'
+      - 'deb http://archive.ubuntu.com/ubuntu/ xenial-updates main restricted'
+      - 'deb http://archive.ubuntu.com/ubuntu/ xenial universe'
+      - 'deb http://archive.ubuntu.com/ubuntu/ xenial-updates universe'
+      - 'deb http://archive.ubuntu.com/ubuntu/ xenial multiverse'
+      - 'deb http://archive.ubuntu.com/ubuntu/ xenial-updates multiverse'
+      - 'deb http://archive.ubuntu.com/ubuntu/ xenial-backports main restricted universe multiverse'
+      - 'deb http://security.ubuntu.com/ubuntu xenial-security main restricted'
+      - 'deb http://security.ubuntu.com/ubuntu xenial-security universe'
+      - 'deb http://security.ubuntu.com/ubuntu xenial-security multiverse'
+    tags:
+      - section1
+      - section1.2
+      - section1.2.1
+
+  - name: 1.2.2 Ensure GPG keys are configured (Not Scored)
+    lineinfile:
+      dest: /etc/apt/apt.conf.d/99GPG-apt
+      line: 'APT::Get::AllowUnauthenticated "false";'
+      state: present
+      create: yes
+    tags:
+      - section1
+      - section1.2
+      - section1.2.2

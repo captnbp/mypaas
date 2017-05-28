@@ -1,0 +1,152 @@
+---
+
+  - command: grep -oP '(?<=^PASS_MAX_DAYS\s)[0-9]+' /etc/login.defs
+    register: pass_max_days
+    changed_when: False
+    check_mode: no
+    tags:
+      - section5
+      - section5.4
+      - section5.4.1.1
+
+  - name: 5.4.1.1 Ensure password expiration is 90 days or less (Scored)
+    lineinfile:
+      dest: /etc/login.defs
+      line: 'PASS_MAX_DAYS 90'
+      regexp: '^PASS_MAX_DAYS'
+    when: pass_max_days.stdout|int > 90
+    tags:
+      - section5
+      - section5.4
+      - section5.4.1.1
+
+  - command: grep -oP '(?<=^PASS_MIN_DAYS\s)[0-9]+' /etc/login.defs
+    register: pass_min_days
+    changed_when: False
+    check_mode: no
+    tags:
+      - section5
+      - section5.4
+      - section5.4.1.2
+
+  - name: 5.4.1.2 Ensure minimum days between password changes is 7 or more (Scored)
+    lineinfile:
+      dest: /etc/login.defs
+      line: 'PASS_MIN_DAYS 7'
+      regexp: '^PASS_MIN_DAYS'
+    when: pass_min_days.stdout|int < 7
+    tags:
+      - section5
+      - section5.4
+      - section5.4.1.2
+
+  - command: grep -oP '(?<=^PASS_WARN_AGE\s)[0-9]+' /etc/login.defs
+    register: pass_warn_age
+    changed_when: False
+    check_mode: no
+    tags:
+      - section5
+      - section5.4
+      - section5.4.1.3
+
+  - name: 5.4.1.3 Ensure password expiration warning days is 7 or more (Scored)
+    lineinfile:
+      dest: /etc/login.defs
+      line: 'PASS_WARN_AGE 7'
+      regexp: '^PASS_WARN_AGE'
+    when: pass_warn_age.stdout|int < 7
+    tags:
+      - section5
+      - section5.4
+      - section5.4.1.3
+
+  - command: grep INACTIVE /etc/login.defs
+    changed_when: False
+    failed_when: False
+    check_mode: no
+    register: lock_inactive_rc
+    tags:
+      - section5
+      - section5.4
+      - section5.4.1.4
+
+  - name: 5.4.1.4 Ensure inactive password lock is 30 days or less (Scored)
+    lineinfile:
+      dest: /etc/login.defs
+      line: 'INACTIVE=35'
+      state: present
+    when: lock_inactive_rc.rc == 1
+    tags:
+      - section5
+      - section5.4
+      - section5.4.1.4
+
+  - shell: egrep -v "^\+" /etc/passwd | awk -F':' '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<1000 && $7!="/usr/sbin/nologin" && $7!="/bin/false") {print}'
+    register: system_acounts
+    changed_when: False
+    tags:
+      - section5
+      - section5.4
+      - section5.4.2
+
+  - copy:
+      src: scripts/5.4.2.sh
+      dest: /opt/5.4.2.sh
+      owner: root
+      group: root
+      mode: 0700
+    tags:
+      - section5
+      - section5.4
+      - section5.4.2
+
+  - name: 5.4.2 Ensure system accounts are non-login (Scored)
+    shell: /opt/5.4.2.sh
+    when: system_acounts.stdout != ""
+    tags:
+      - section5
+      - section5.4
+      - section5.4.2
+
+  - name: prueba
+    file:
+      path: /opt/5.4.2.sh
+      owner: root
+      group: root
+      mode: 0700
+      state: absent
+    tags:
+      - section5
+      - section5.4
+      - section5.4.2
+
+  - name: 5.4.3 Ensure default group for the root account is GID 0 (Scored)
+    command: grep "^root:" /etc/passwd | cut -f4 -d':'
+    register: root_gid
+    failed_when: False 
+    tags:
+      - section5
+      - section5.4
+      - section5.4.3
+
+  - name: 5.4.3 Ensure default group for the root account is GID 0 (Scored)
+    command: usermod -g 0 root
+    when: root_gid !=0
+    tags:
+      - section5
+      - section5.4
+      - section5.4.3
+
+  - name: 5.4.4 Ensure default user umask is 027 or more restrictive (Scored)
+    lineinfile:
+      dest: "{{ item }}"
+      line: 'umask 027'
+      regexp: '^umask'
+      state: present
+    with_items:
+      - '/etc/bash.bashrc'
+      - '/etc/profile'
+    tags:
+      - section5
+      - section5.4
+      - section5.4.4

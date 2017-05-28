@@ -1,0 +1,64 @@
+---
+
+  - command: grep "hard core" /etc/security/limits.conf
+    register: hard_core
+    failed_when: False
+    changed_when: False
+    tags:
+      - section1
+      - section1.5
+      - section1.5.1
+
+  - name: 1.5.1 Ensure core dumps are restricted (Scored)
+    lineinfile:
+      dest: '/etc/security/limits.conf'
+      line: '* hard core 0'
+      state: present
+      insertbefore: '^# End of file'
+    when: hard_core.rc != 0
+    tags:
+      - section1
+      - section1.5
+      - section1.5.1
+
+  - name: 1.5.1 Ensure core dumps are restricted (Scored)
+    sysctl:
+      name: fs.suid_dumpable
+      value: 0
+      state: present
+    when: restrict_core_dumps == True
+    tags:
+      - section1
+      - section1.5
+      - section1.5.1
+
+  - name: 1.5.2 Ensure XD/NX support is enabled (Not Scored)
+    shell: 'dmesg | grep NX'
+    register: nx_result
+    failed_when: nx_result.rc == 1
+    changed_when: False
+    ignore_errors: True
+    tags:
+      - section1
+      - section1.5
+      - section1.5.2
+
+  - name: 1.5.3 Ensure address space layout randomization (ASLR) is enabled (Scored)
+    sysctl:
+      name: kernel.randomize_va_space
+      value: 2
+      state: present
+    when: enable_aslr == True
+    tags:
+      - section1
+      - section1.5
+      - section1.5.3
+
+  - name: 1.5.4 Ensure prelink is disabled (Scored)
+    apt:
+      name: prelink
+      state: absent
+    tags:
+      - section1
+      - section1.5
+      - section1.5.4

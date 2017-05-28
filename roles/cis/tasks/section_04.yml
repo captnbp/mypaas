@@ -1,0 +1,16 @@
+---
+
+  - include: section_04_level1.yml
+    tags:
+      - section04
+      - level1
+
+  - include: section_04_level2.yml
+    tags:
+      - section04
+      - level2
+
+  - include: section_04_level3.yml
+    tags:
+      - section04
+      - level3

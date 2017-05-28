@@ -18,6 +18,7 @@
   become: true
   roles:
     - { role: backup, tags: ['swf', 'admin', 'backup'] }
+    - { role: cis, tags: ['swf', 'admin', 'cis', 'security'] }
     - { role: basic_server_setup, tags: ['swf', 'admin', 'base'] }
     - { role: ovh, tags: ['admin', 'ovh'] }
     - { role: fail2ban, tags: ['swf', 'admin', 'fail2ban'] }
@@ -27,6 +28,7 @@
     - { role: ldap, tags: ['swf', 'admin', 'ldap'] }
     - { role: rundeck, tags: ['swf', 'admin', 'rundeck'] }
     - { role: registry, tags: ['swf', 'admin', 'registry'] }
+    - { role: wiki, tags: ['swf', 'admin', 'wiki'] }
     - { role: gitlab, tags: ['swf', 'admin', 'gitlab'] }
     - { role: jenkins, tags: ['swf', 'admin', 'jenkins'] }
     - { role: owncloud, tags: ['swf', 'owncloud'] }

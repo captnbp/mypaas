@@ -1,0 +1,418 @@
+---
+
+  - name: 2.2.1.1 Ensure time synchronization is in use (Not Scored)
+    apt:
+      name: "{{ntp_package}}"
+      state: present
+    tags:
+      - section2
+      - section2.2
+      - section2.2.1.1
+
+  - name: 2.2.1.2 Ensure ntp is configured (Scored)
+    lineinfile:
+      dest: "{{ item.name }}"
+      regexp: '{{item.expression}}'
+      line: '{{item.value}}'
+    with_items:
+      - { name: '/etc/ntp.conf' , expression: '^server' , value: 'pool 10.190.14.12' }
+      - { name: '/etc/ntp.conf' , expression: '^restrict -4' , value: 'restrict -4 default kod nomodify notrap nopeer noquery' }
+      - { name: '/etc/ntp.conf' , expression: '^restrict -6' , value: 'restrict -6 default kod nomodify notrap nopeer noquery' }
+      - { name: '/etc/init.d/ntp', expression: '^RUNASUSER' , value: 'RUNASUSER=ntp' }
+    when: ntp_package  == "ntp"
+    notify: restart ntp
+    tags:
+      - section2
+      - section2.2
+      - section2.2.1.2
+
+  - name: 2.2.1.3 Ensure chrony is configured (Scored)
+    lineinfile:
+      dest: "{{ item.name }}"
+      regexp: '{{item.expression}}'
+      line: '{{item.value}}'
+    with_items:
+      - { name: '/etc/chrony/chrony.conf', expression: '^server', value: 'server 10.190.14.12' }
+      - { name: '/etc/chrony/chrony.conf', expression: '^pool', value: '' }
+    when: ntp_package  == "chrony"
+    notify: restart chrony
+    tags:
+      - section2
+      - section2.2
+      - section2.2.1.3
+
+  - name: 2.2.2 Ensure X Window System is not installed (Scored)
+    apt:
+      name: xserver-xorg-core*
+      purge: yes
+      state: absent
+    when: remove_xserver == True
+    tags:
+      - section2
+      - section2.2
+      - section2.2.2
+
+  - command: dpkg-query -s avahi-daemon
+    register: avahi_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.3
+
+  - name: 2.2.3 Ensure Avahi Server is not enabled (Scored)
+    service:
+      name: avahi-daemon
+      state: stopped
+      enabled: no
+    when: avahi_installed.rc == 0
+    tags:
+      - section2
+      - section2.2
+      - section2.2.3
+
+  - command: dpkg-query -s cups-server-common
+    register: cups_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.4
+
+  - name: 2.2.4 Ensure CUPS is not enabled (Scored)
+    service:
+      name: cups
+      state: stopped
+      enabled: no
+    when: cups_installed.rc == 0
+    tags:
+      - section2
+      - section2.2
+      - section2.2.4
+
+  - command: dpkg-query -s isc-dhcp-server
+    register: dhcp_installed
+    failed_when: False 
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.5
+
+  - command: dpkg-query -s isc-dhcp-server6
+    register: dhcp6_installed
+    failed_when: False 
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.5
+
+  - name: 2.2.5 Ensure DHCP Server is not enabled (Scored)
+    service:
+      name: "{{ item }}"
+      state: stopped
+      enabled: no
+    with_items:
+      - isc-dhcp-server
+      - isc-dhcp-server6
+    when: dhcp_installed.rc == 0 or dhcp6_installed.rc == 0
+    tags:
+      - section2
+      - section2.2
+      - section2.2.5
+
+  - command: dpkg-query -s slapd
+    register: ldap_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.6
+
+  - name: 2.2.6 Ensure LDAP server is not enabled (Scored)
+    service:
+      name: slapd
+      state: stopped
+      enabled: no
+    when: ldap_installed.rc == 0
+    tags:
+      - section2
+      - section2.2
+      - section2.2.6
+
+  - command: dpkg-query -s nfs-kernel-server
+    register: nfs_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.7
+
+  - command: dpkg-query -s rpcbind
+    register: rpcbind_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.7
+
+  - name: 2.2.7 Ensure NFS and RPC are not enabled (Scored)
+    service:
+      name: "{{ item }}"
+      state: stopped
+      enabled: no
+    with_items:
+      - rpcbind
+      - nfs-server
+    when: rpcbind_installed.rc == 0 or nfs_installed.rc == 0
+    tags:
+      - section2
+      - section2.2
+      - section2.2.7
+
+  - command: dpkg-query -s bind9
+    register: bind9_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.8
+
+  - name: 2.2.8 Ensure DNS Server is not enabled (Scored)
+    service:
+      name: bind9
+      state: stopped
+      enabled: no
+    when: bind9_installed.rc == 0
+    tags:
+      - section2
+      - section2.2
+      - section2.2.8
+
+  - command: dpkg-query -s vsftpd
+    register: vsftpd_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.9
+
+  - name: 2.2.9 Ensure FTP Server is not enabled (Scored)
+    service:
+      name: vsftpd
+      state: stopped
+      enabled: no
+    when: vsftpd_installed.rc == 0
+    tags:
+      - section2
+      - section2.2
+      - section2.2.9
+
+  - command: dpkg-query -s apache2
+    register: apache2_installed
+    failed_when: False 
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.10
+
+  - name: 2.2.10 Ensure HTTP server is not enabled (Scored)
+    service:
+      name: apache2
+      state: stopped
+      enabled: no
+    when: apache2_installed.rc == 0
+    tags:
+      - section2
+      - section2.2
+      - section2.2.10
+
+  - command: dpkg-query -s dovecot
+    register: dovecot_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.11
+
+  - command: dpkg-query -s exim
+    register: exim_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.11
+
+  - command: dpkg-query -s cyrus-imap
+    register: cyrus_imap_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.11
+
+  - name: 2.2.11 Ensure IMAP and POP3 server is not enabled (Scored)
+    service:
+      name: "{{ item }}"
+      state: stopped
+      enabled: no
+    with_items:
+      - dovecot
+      - exim
+      - cyrus-imap
+    when: dovecot_installed.rc == 0 or exim_installed.rc == 0 or cyrus_imap_installed.rc == 0
+    tags:
+      - section2
+      - section2.2
+      - section2.2.11
+
+  - command: dpkg-query -s smbd
+    register: smbd_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.12
+
+  - name: 2.2.12 Ensure Samba is not enabled (Scored)
+    service:
+      name: smbd
+      state: stopped
+      enabled: no
+    when: smbd_installed.rc == 0
+    tags:
+      - section2
+      - section2.2
+      - section2.2.12
+
+  - command: dpkg-query -s squid
+    register: squid_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.13
+
+  - name: 2.2.13 Ensure HTTP Proxy Server is not enabled (Scored)
+    service:
+      name: squid
+      state: stopped
+      enabled: no
+    when: squid_installed.rc == 0
+    tags:
+      - section2
+      - section2.2
+      - section2.2.13
+
+  - command: dpkg-query -s snmpd
+    register: snmpd_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.14
+
+  - name: 2.2.14 Ensure SNMP Server is not enabled (Scored)
+    service:
+      name: snmpd
+      state: stopped
+      enabled: no
+    when: snmpd_installed.rc == 0
+    tags:
+      - section2
+      - section2.2
+      - section2.2.14
+
+  - apt:
+      name: postfix
+      state: present
+    tags:
+      - section2
+      - section2.2
+      - section2.2.15
+
+  - name: 2.2.15 Ensure mail transfer agent is configured for local-only mode (Scored)
+    lineinfile:
+      dest: /etc/postfix/main.cf
+      regexp: '^inet_interfaces'
+      line: 'inet_interfaces = localhost'
+      state: present
+      create: no
+    notify: restart postfix
+    tags:
+      - section2
+      - section2.2
+      - section2.2.15
+
+  - command: dpkg-query -s rsync
+    register: rsync_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.16
+
+  - name: 2.2.16 Ensure rsync service is not enabled (Scored)
+    service:
+      name: rsync
+      state: stopped
+      enabled: no
+    when: rsync_installed.rc == 0
+    tags:
+      - section2
+      - section2.2
+      - section2.2.16
+
+  - command: dpkg-query -s nis
+    register: nis_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section2
+      - section2.2
+      - section2.2.17
+
+  - name: 2.2.17 Ensure NIS Server is not enabled (Scored)
+    service:
+      name: nis
+      state: stopped
+      enabled: no
+    when: nis_installed.rc == 0
+    tags:
+      - section2
+      - section2.2
+      - section2.2.17

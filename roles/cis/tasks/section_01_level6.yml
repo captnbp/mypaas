@@ -1,0 +1,114 @@
+---
+
+  - name: 1.6.1.1 Ensure SELinux is not disabled in bootloader configuration (Scored)
+    lineinfile:
+      dest: /etc/default/grub
+      line: 'GRUB_CMDLINE_LINUX_DEFAULT="quiet"'
+      state: present
+    tags:
+      - section1
+      - section1.6
+      - section1.6.1.1
+
+  - name: 1.6.1.1 Ensure SELinux is not disabled in bootloader configuration (Scored)
+    lineinfile: 
+      dest: /etc/default/grub
+      line: 'GRUB_CMDLINE_LINUX=""'
+      state: present
+    tags:
+      - section1
+      - section1.6
+      - section1.6.1.1
+
+  - command: dpkg -l selinux
+    register: selinux_installed
+    failed_when: False
+    ignore_errors: True
+    changed_when: False
+    tags:
+      - section1
+      - section1.6
+      - section1.6.1.2
+
+  - apt:
+      name: selinux
+      state: present
+    when: selinux_installed.rc == 1 and enable_selinux == True and use_apparmor == False
+    tags:
+      - section1
+      - section1.6
+      - section1.6.1.2
+
+  - name: 1.6.1.2 Ensure the SELinux state is enforcing (Scored)
+    lineinfile:
+      dest: /etc/selinux/config
+      line: 'SELINUX=enforcing'
+      state: present
+    when: selinux_installed.rc == 0 and enable_selinux == True and use_apparmor == False
+    tags:
+      - section1
+      - section1.6
+      - section1.6.1.2
+
+  - name: 1.6.1.3 Ensure SELinux policy is configured (Scored)
+    lineinfile:
+      dest: /etc/selinux/config
+      line: 'SELINUXTYPE=ubuntu'
+      state: present
+    when: selinux_installed.rc == 0 and enable_selinux == True and use_apparmor == False
+    tags:
+      - section1
+      - section1.6
+      - section1.6.1.3
+
+  - name: 1.6.1.4 Ensure no unconfined daemons exist (Scored)
+    shell: ps -eZ | egrep "initrc" | egrep -vw "tr|ps|egrep|bash|awk" | tr ':' ' ' | awk '{print $NF }'
+    when: selinux_installed.rc == 0 and enable_selinux == True and use_apparmor == False
+    tags:
+      - section1
+      - section1.6
+      - section1.6.1.4
+
+  - name: 1.6.2.1 Ensure AppArmor is not disabled in bootloader configuration (Scored)
+    command: sed -i -r 's/apparmor=0//g' /boot/grub/grub.cfg
+    when: use_apparmor == True
+    notify: update grub
+    tags:
+      - section1
+      - section1.6
+      - section1.6.2.1
+
+  - shell : apparmor_status|grep "0 processes are in complain mode"
+    register: apparmor_status_complain_output
+    failed_when: False
+    changed_when: False
+    tags:
+      - section1
+      - section1.6
+      - section1.6.2.2
+
+  - shell : apparmor_status|grep "0 processes are unconfined"
+    register: apparmor_status_unconfined_output
+    failed_when: False
+    changed_when: False
+    tags:
+      - section1
+      - section1.6
+      - section1.6.2.2
+
+  - name: 1.6.2.2 Ensure all AppArmor Profiles are enforcing (Scored)
+    shell: aa-enforce /etc/apparmor.d/*
+    when: use_apparmor == True and apparmor_status_complain_output.rc == 1 and apparmor_status_unconfined_output == 1
+    tags:
+      - section1
+      - section1.6
+      - section1.6.2.2
+
+  - name: 1.6.3 Ensure SELinux or AppArmor are installed (Not Scored)
+    apt:
+      name: "{{ selinux_apparmor }}"
+      state: present
+    tags:
+      - section1
+      - section1.6
+      - section1.6.3

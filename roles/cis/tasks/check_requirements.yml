@@ -1,0 +1,6 @@
+---
+
+  - name: Check if OS is Ubuntu 16.04 xenial (we do not support others)
+    debug: msg="Check OS"
+    failed_when: ansible_distribution != "Ubuntu" and ansible_distribution_version !="16.04"
+
