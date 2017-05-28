@@ -1,4 +1,6 @@
 newuser: ubuntu
+sshd_allow_users: ubuntu
+sshd_allow_groups: ubuntu
 local_user: "TODO"
 admin_vm_name: admin-vm
 tld_hostname: "TODO"
