@@ -1,25 +1,25 @@
 # mypaas
-MyPaas by D2-SI is an Ansible playbook for startups or small companies which want to build a modern and fully automated infrastructure.
+MyPaas by [D2-SI](http://d2-si.fr/) & [S&B Digital](https://sandbdigital.com/fr/) is an Ansible playbook for startups or small companies which want to build a modern and fully automated infrastructure.
 
 This infrastructure will be composed by :
- - Ubuntu 16.04 VPS VMs on OVH Public Cloud
- - Docker Swarm
+ - Ubuntu 16.04 VPS VMs on [OVH Public Cloud](https://www.ovh.com/fr/public-cloud/)
+ - [Docker](https://www.docker.com/) Swarm 17.xx
  - A software factory
-  - Gitlab
-  - Jenkins
- - Monitoring with DatadogHQ
- - Team chat with Slack
+  - [Gitlab](https://github.com/sameersbn/docker-gitlab)
+  - [Jenkins](https://jenkins.io/)
+  - [Rundeck](https://github.com/captnbp/docker-rundeck)
+ - Monitoring with [DatadogHQ](https://www.datadoghq.com/)
+ - Team chat with [Slack](https://slack.com/)
  - Productivity tools 
-  - Odoo
-  - Owncloud
-  - Dokuwiki (soon)
-  - Team password manager (soon)
- - Automatic encrypted backup with Duplicity and OVH Cloud Storage
+  - [Nextcloud](https://github.com/Wonderfall/dockerfiles)
+  - [Dokuwiki](https://github.com/captnbp/docker-dokuwiki)
+ - Automatic encrypted backup with [Duplicity](http://duplicity.nongnu.org/) and [OVH Cloud Storage](https://www.ovh.com/fr/public-cloud/storage/object-storage/)
  - Security
-  - Let's Encrypt
-  - OpenLDAP
-  - OpenVPN
-  - Fail2ban
+  - CIS Benchmark for Ubuntu 16.04 (based on https://github.com/grupoversia/cis-ubuntu-ansible)
+  - [Let's Encrypt](https://letsencrypt.org/)
+  - [OpenLDAP](https://github.com/osixia/docker-openldap)
+  - [OpenVPN](https://github.com/kylemanna/docker-openvpn/)
+  - [Fail2ban](https://github.com/fail2ban/fail2ban)
   - Log management with OVH PaaS Logs (soon)
   - Vulnerability scanner with OpenVAS and CoreOS Clair (soon)
  - And more !

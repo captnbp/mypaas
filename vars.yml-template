@@ -160,14 +160,14 @@ vpn:
     email: "admin@{{ tld_hostname }}"
     ou: vpn
 
-owncloud:
-  docker_image: captnbp/docker-owncloud
+nextcloud:
+  docker_image: wonderfall/nextcloud:11.0
   db:
-    user: owncloud
+    user: nextcloud
     pass: "PASSWORD"
-    host: owncloud-mariadb
+    host: nextcloud-mariadb
     port: 3306
-    name: owncloud
+    name: nextcloud
     table_prefix: "sd56bh4XXXXXXXXX"
     root_pass: "PASSWORD"
   admin:

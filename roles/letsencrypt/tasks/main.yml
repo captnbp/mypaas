@@ -34,7 +34,7 @@
   shell: cd {{ letsencrypt_git }} && ./letsencrypt-auto --help
 
 - name: Create certificates
-  command: /var/git/letsencrypt/letsencrypt-auto certonly --non-interactive --agree-tos --standalone --email admin@{{ tld_hostname }} -d admin.{{ tld_hostname }} -d jenkins.{{ tld_hostname }} -d vpn.{{ tld_hostname }} -d ldap.{{ tld_hostname }} -d git.{{ tld_hostname }} -d docker-registry.{{ tld_hostname }} -d vault.{{ tld_hostname }} -d wiki.{{ tld_hostname }} -d rundeck.{{ tld_hostname }} -d owncloud.{{ tld_hostname }} -d odoo.{{ tld_hostname }}
+  command: /var/git/letsencrypt/letsencrypt-auto certonly --non-interactive --agree-tos --standalone --email admin@{{ tld_hostname }} -d admin.{{ tld_hostname }} -d jenkins.{{ tld_hostname }} -d vpn.{{ tld_hostname }} -d ldap.{{ tld_hostname }} -d git.{{ tld_hostname }} -d docker-registry.{{ tld_hostname }} -d vault.{{ tld_hostname }} -d wiki.{{ tld_hostname }} -d rundeck.{{ tld_hostname }} -d drive.{{ tld_hostname }} -d odoo.{{ tld_hostname }}
   args:
     creates: /etc/letsencrypt/archive/admin.{{ tld_hostname }}/fullchain1.pem
 
